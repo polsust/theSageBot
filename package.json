@@ -1,0 +1,12 @@
+{
+	"name": "thesagebot",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"author": "iCoolSkeleton95",
+	"license": "ISC",
+	"dependencies": {
+		"discord.js": "^12.5.3",
+		"steamapi": "^2.1.3"
+	}
+}
