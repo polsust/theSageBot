@@ -84,7 +84,6 @@ module.exports = {
 			  with all the dataaaa*/
 		}
 		msg.channel.send(embed);
-		msg.channel.send(embed);
 	},
 };
 
