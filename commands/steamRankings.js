@@ -18,7 +18,6 @@ const steamID = [
 
 module.exports = {
 	name: "s",
-	description: "Get a full chart of the The Sages steam ranking",
 	async execute(msg, args) {
 		//get names and playtimes
 		const user = [];
@@ -62,6 +61,7 @@ module.exports = {
 				"<:steam:852812448313507890>`Steam Rankings				📅" + getDate() + "`"
 			);
 		//get each user
+		let pos = 1;
 		for (let i = 0; i < user.length; i++) {
 			let name = user[i].name;
 			let playtime = user[i].playtime;
@@ -74,7 +74,7 @@ module.exports = {
 			}
 			//Each user goes here
 			embed.addFields({
-				name: name + "" + spaces + "" + medals[i], //use emojis to set position in the ranking
+				name: `${pos++}.-${name}${spaces}${medals[i]}`, //use emojis to set position in the ranking
 				value: "`" + playtime + " h ⏱️\n" + days + " d`",
 				inline: false,
 			});
