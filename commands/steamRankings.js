@@ -1,9 +1,9 @@
 const Discord = require("discord.js");
 const client = new Discord.Client();
+
 //Steam
 const SteamAPI = require("steamapi");
 const steam = new SteamAPI("F575C6A6CAB8A56FA969228CC23C262A");
-//TODO: order by hours
 const steamID = [
 	"76561198298126172", //thePlaya
 	"76561198299951692", //george
@@ -14,7 +14,26 @@ const steamID = [
 	"76561198325178850", //rul
 	"76561198442783501", //mauvy
 	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
+	"76561199033323069", //marc
 ];
+//DATABASE
+const Database = require("../database/Database");
+const { insertNewRecord } = require("../database/Database");
+const db = new Database();
 
 module.exports = {
 	name: "s",
@@ -74,16 +93,42 @@ module.exports = {
 			}
 			//Each user goes here
 			embed.addFields({
-				name: `${pos++}.-${name}${spaces}${medals[i]}`, //use emojis to set position in the ranking
+				name: `${pos++}.- ${name}${spaces}${medals[i]}`, //use emojis to set position in the ranking
 				value: "`" + playtime + " h ⏱️\n" + days + " d`",
 				inline: false,
 			});
 			/*TODO: create a database to store the playtime so you can compare it
 			  to the new one and display how many hours has the user played since
 			  the last time. Each time the command gets executed create a new row
-			  with all the dataaaa*/
+			  with the steamUserID & playtime in hours*/
 		}
 		msg.channel.send(embed);
+
+		if (!active) {
+			loadMsg.delete();
+			clearInterval(load);
+			return;
+		}
+		async function load() {
+			let loadMsg;
+
+			let loadState = [
+				"❌❌❌❌ LOADING ",
+				"✅❌❌❌ LOADING .",
+				"✅✅❌❌ LOADING ..",
+				"✅✅✅❌ LOADING ...",
+				"✅✅✅✅ LOADING ",
+			];
+
+			loadMsg = await msg.channel.send(loadState[0]);
+
+			let i = 0;
+			const load = setInterval(() => {
+				i++;
+				loadMsg.edit(loadState[i]);
+				if (i == loadState.length - 1) i = -1;
+			}, 1500);
+		}
 	},
 };
 
