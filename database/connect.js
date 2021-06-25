@@ -1,4 +1,5 @@
 var mysql = require("mysql");
+
 const connection = mysql.createConnection({
 	host: "eu-cdbr-west-01.cleardb.com",
 	user: "b73c876890b450",

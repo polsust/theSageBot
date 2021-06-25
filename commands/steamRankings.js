@@ -14,21 +14,6 @@ const steamID = [
 	"76561198325178850", //rul
 	"76561198442783501", //mauvy
 	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
-	"76561199033323069", //marc
 ];
 //DATABASE
 const Database = require("../database/Database");
@@ -42,11 +27,12 @@ module.exports = {
 		const user = [];
 		for (let i = 0; i < steamID.length; i++) {
 			const id = steamID[i];
-			//get hoursPlaytime & transform it to days
+			//get hoursPlaytime of all the users
 			let hours = await getPlaytime(id);
 			let days = hours / 24;
 			days = days.toFixed(1);
 			user.push({
+				id: id,
 				name: await getNames(id),
 				playtime: hours,
 				days: days,
@@ -54,26 +40,8 @@ module.exports = {
 		}
 		//sort by playtime
 		user.sort((a, b) => parseFloat(b.playtime) - parseFloat(a.playtime));
-
 		//embed
-		let medals = [
-			"[🥇]",
-			"[🥈]",
-			"[🥉]",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-		];
+		let medals = ["[🥇]", "[🥈]", "[🥉]"];
 		const embed = new Discord.MessageEmbed()
 			.setColor("#f59342")
 			.setTitle(
@@ -82,6 +50,7 @@ module.exports = {
 		//get each user
 		let pos = 1;
 		for (let i = 0; i < user.length; i++) {
+			let id = user[i].id;
 			let name = user[i].name;
 			let playtime = user[i].playtime;
 			let days = user[i].days;
@@ -91,10 +60,15 @@ module.exports = {
 			for (let i = 0; i < nSpaces; i++) {
 				spaces += " ";
 			}
+			//SQL REQUESTS
+			insertNewRecord(id, playtime);
 			//Each user goes here
+			let award;
+			medals[i] != null ? (award = medals[i]) : (award = "");
+
 			embed.addFields({
-				name: `${pos++}.- ${name}${spaces}${medals[i]}`, //use emojis to set position in the ranking
-				value: "`" + playtime + " h ⏱️\n" + days + " d`",
+				name: `${pos++}.- ${name}${spaces}${award}`, //use emojis to set position in the ranking
+				value: "`" + playtime + " Hours ⏱️\n" + days + " Days`",
 				inline: false,
 			});
 			/*TODO: create a database to store the playtime so you can compare it
@@ -104,11 +78,6 @@ module.exports = {
 		}
 		msg.channel.send(embed);
 
-		if (!active) {
-			loadMsg.delete();
-			clearInterval(load);
-			return;
-		}
 		async function load() {
 			let loadMsg;
 

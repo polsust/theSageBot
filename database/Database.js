@@ -1,8 +1,6 @@
 var db = require("./connect");
 
 module.exports = class Database {
-	//DB connection
-	constructor() {}
 	//INSERT
 	static insertNewRecord(steamId, hours) {
 		db.query(
