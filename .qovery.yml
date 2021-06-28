@@ -1,0 +1,11 @@
+---
+application:
+  name: "thesagebot"
+  project: "theSageBot"
+  organization: "QoveryCommunity"
+routers:
+- name: "main-thesagebot"
+  routes:
+  - application_name: "thesagebot"
+    paths:
+    - "/*"
