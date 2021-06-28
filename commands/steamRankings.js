@@ -61,7 +61,7 @@ module.exports = {
 				spaces += " ";
 			}
 			//SQL REQUESTS
-			insertNewRecord(id, playtime);
+			// insertNewRecord(id, playtime);
 			//Each user goes here
 			let award;
 			medals[i] != null ? (award = medals[i]) : (award = "");
