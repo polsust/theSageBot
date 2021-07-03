@@ -3,7 +3,8 @@ const client = new Discord.Client();
 
 //Steam
 const SteamAPI = require("steamapi");
-const steam = new SteamAPI("F575C6A6CAB8A56FA969228CC23C262A");
+const { steamToken } = require("../config.json");
+const steam = new SteamAPI(steamToken);
 const steamID = [
 	"76561198298126172", //thePlaya
 	"76561198299951692", //george
@@ -61,7 +62,7 @@ module.exports = {
 				spaces += " ";
 			}
 			//SQL REQUESTS
-			// insertNewRecord(id, playtime);
+			insertNewRecord(id, playtime);
 			//Each user goes here
 			let award;
 			medals[i] != null ? (award = medals[i]) : (award = "");

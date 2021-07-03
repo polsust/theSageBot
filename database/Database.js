@@ -7,9 +7,9 @@ module.exports = class Database {
 			`INSERT INTO steam_playtime SET steam_user_id='${steamId}', hours=${hours}`,
 			(err, result) => {
 				if (err) {
-					console.error(err);
+					console.error(err.code);
 				} else {
-					console.log("Insert successful");
+					console.log(result);
 				}
 			}
 		);
