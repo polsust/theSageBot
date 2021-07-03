@@ -110,8 +110,6 @@ function getPlaytime(id) {
 				let minutes = 0;
 				for (let i = 0; i < games.length; i++) {
 					minutes += games[i].playTime;
-
-					// txt += games[i].name + " " + Math.round(games[i].playTime / 60) + "\n";
 				}
 				let hours = minutes / 60;
 				hours = Math.round(hours);

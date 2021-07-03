@@ -1,10 +1,11 @@
 var mysql = require("mysql");
+const { host, user, password, database } = require("./dbConfig.json");
 
 const connection = mysql.createConnection({
-	host: "eu-cdbr-west-01.cleardb.com",
-	user: "b73c876890b450",
-	password: "095db200",
-	database: "heroku_22fcd43803d1ae6",
+	host,
+	user,
+	password,
+	database,
 });
 
 connection.connect((err) => {
