@@ -2,6 +2,8 @@ const db = require("./connect");
 
 //INSERT
 function insertNewRecord(users) {
+	console.log(users);
+
 	var request = `INSERT INTO steam_playtime SET`;
 
 	for (let i = 0; i < users.length; i++) {
@@ -15,7 +17,7 @@ function insertNewRecord(users) {
 		lastId(result.insertId);
 	});
 }
-function lastId(lastId) {
+function lastId(lastId?: number): number {
 	if (lastId != undefined) this.id = lastId;
 
 	return this.id;
@@ -44,6 +46,7 @@ function getRecord(value) {
 module.exports = {
 	insertNewRecord,
 	getRecord,
+	lastId,
 };
 
 function getDate() {

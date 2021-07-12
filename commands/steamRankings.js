@@ -17,7 +17,11 @@ const steamID = [
 	"76561199033323069", //marc
 ];
 //DATABASE
-const { insertNewRecord, getRecord } = require("../database/Database");
+const {
+	insertNewRecord,
+	getRecord,
+	lastId,
+} = require("../database/Database.ts");
 
 module.exports = {
 	name: "s",
@@ -42,7 +46,7 @@ module.exports = {
 		//sort by playtime
 		user.sort((a, b) => parseFloat(b.playtime) - parseFloat(a.playtime));
 
-		let embed = createEmbed(user);
+		let embed = createEmbed(user, null, lastId());
 
 		const left = "⬅️";
 		const right = "➡️";
@@ -101,16 +105,14 @@ module.exports = {
 	},
 };
 
-function createEmbed(user, date = getDate()) {
+function createEmbed(user, date = getDate(), totalPages) {
 	let medals = ["[🥇]", "[🥈]", "[🥉]"];
 
 	const embed = new Discord.MessageEmbed()
 		.setColor("#f59342")
 		.setTitle("<:steam:852812448313507890>`Steam Rankings				📅" + date + "`")
 		//display on the footer on wich page we are
-		.setFooter(
-			"Page " + user.length / 5 + " / " + user.length / 5 + " | Page Size: 5"
-		);
+		.setFooter(`Page x / ${totalPages}`);
 
 	//get each user
 	let pos = 1;
@@ -164,7 +166,7 @@ async function updateRecord(record, msg) {
 	//sort by playtime
 	user.sort((a, b) => parseFloat(b.playtime) - parseFloat(a.playtime));
 
-	let embed = createEmbed(user, record.date);
+	let embed = createEmbed(user, record.date, lastId());
 	msg.edit(embed).then(() => {
 		msg.reactions.removeAll();
 
