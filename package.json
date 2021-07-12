@@ -8,7 +8,6 @@
 	"dependencies": {
 		"discord.js": "^12.5.3",
 		"mysql2": "^2.2.5",
-		"sequelize": "^6.6.5",
 		"steamapi": "^2.1.3"
 	}
 }

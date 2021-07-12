@@ -13,11 +13,7 @@ function insertNewRecord(users) {
 		if (err) console.error(err);
 
 		lastId(result.insertId);
-		// console.log(result);
-		// return result;
 	});
-
-	// console.log("inserted new record with id: " + lastId);
 }
 function lastId(lastId) {
 	if (lastId != undefined) this.id = lastId;
@@ -27,8 +23,13 @@ function lastId(lastId) {
 
 //SELECT
 function getRecord(value) {
-	let id = lastId(id);
-	value = "-" ? (id -= 1) : (id += 1);
+	let id = lastId();
+	console.log(value);
+	if (value == "-") id -= 1;
+	if (value == "+") id += 1;
+
+	console.log(id);
+	lastId(id);
 
 	return new Promise((resolve, reject) => {
 		var request = `SELECT * FROM steam_playtime where count_id=${id}`;

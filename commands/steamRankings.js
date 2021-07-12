@@ -106,7 +106,12 @@ function createEmbed(user, date = getDate()) {
 
 	const embed = new Discord.MessageEmbed()
 		.setColor("#f59342")
-		.setTitle("<:steam:852812448313507890>`Steam Rankings				📅" + date + "`");
+		.setTitle("<:steam:852812448313507890>`Steam Rankings				📅" + date + "`")
+		//display on the footer on wich page we are
+		.setFooter(
+			"Page " + user.length / 5 + " / " + user.length / 5 + " | Page Size: 5"
+		);
+
 	//get each user
 	let pos = 1;
 	for (let i = 0; i < user.length; i++) {
@@ -158,7 +163,7 @@ async function updateRecord(record, msg) {
 
 	//sort by playtime
 	user.sort((a, b) => parseFloat(b.playtime) - parseFloat(a.playtime));
-	console.log(user);
+
 	let embed = createEmbed(user, record.date);
 	msg.edit(embed).then(() => {
 		msg.reactions.removeAll();
