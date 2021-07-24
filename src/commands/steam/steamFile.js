@@ -1,4 +1,4 @@
-//Steam
+/* //Steam
 const SteamAPI = require("steamapi");
 const steam = new SteamAPI("F575C6A6CAB8A56FA969228CC23C262A");
 
@@ -22,3 +22,4 @@ function getProfilePic(id) {
 			return "an error was produced";
 		});
 }
+ */
