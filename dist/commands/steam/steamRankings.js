@@ -27,14 +27,16 @@ const steamID = [
     "76561199033323069", //marc
 ];
 //DATABASE
-const Database_1 = require("../../database/Database");
-// function longestString(strings: Object[]) {
-// 	let length: number[] = [];
-// 	strings.forEach((element) => {
-// 		length.push(element.name.length);
-// 	});
-// 	return (largestName = Math.max.apply(null, length));
-// }
+const SteamModel_1 = require("../../database/SteamModel");
+function longestString(strings) {
+    let length = [];
+    strings.forEach((element) => {
+        length.push(element.name.length);
+    });
+    let LongestName;
+    return (LongestName = Math.max.apply(null, length));
+}
+const steamRecord = new SteamModel_1.SteamModel();
 module.exports = class SteamRankings extends discord_js_commando_1.Command {
     constructor(client) {
         super(client, {
@@ -44,13 +46,13 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             memberName: "rankings",
             description: "The Steam playtime rankings",
         });
+        this.totalPages = 0;
     }
     run(msg) {
         return __awaiter(this, void 0, void 0, function* () {
             //get names and playtimes
             const user = [];
-            for (let i = 0; i < steamID.length; i++) {
-                const id = steamID[i];
+            for (let id of steamID) {
                 //get hoursPlaytime of all the users
                 let hours = yield this.getPlaytime(id);
                 let days = hours / 24;
@@ -62,15 +64,17 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
                     days: days,
                 });
             }
-            Database_1.insertNewRecord(user);
+            yield steamRecord.insertNewRecord(user);
+            this.totalPages = steamRecord.getLastId();
             //sort by playtime
             user.sort((a, b) => b.playtime - a.playtime);
-            let embed = this.createEmbed(user, Database_1.lastId());
+            let embed = this.createEmbed(user, steamRecord.getLastId());
             return msg.say(embed).then((msg) => {
                 const left = "⬅️";
                 const right = "➡️";
+                const save = "💾";
                 msg.react(left);
-                msg.react(right);
+                msg.react(save);
                 const interval = 100;
                 setInterval(() => {
                     msg
@@ -79,12 +83,14 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
                         .then((collected) => __awaiter(this, void 0, void 0, function* () {
                         const reaction = collected.first();
                         if ((reaction === null || reaction === void 0 ? void 0 : reaction.emoji.name) === right) {
-                            const record = yield Database_1.getRecord("+");
+                            const record = yield steamRecord.getRecord("next");
                             this.updateRecord(record, msg);
                         }
                         else if ((reaction === null || reaction === void 0 ? void 0 : reaction.emoji.name) === left) {
-                            const record = yield Database_1.getRecord("-");
+                            const record = yield steamRecord.getRecord("previous");
                             this.updateRecord(record, msg);
+                        }
+                        else if ((reaction === null || reaction === void 0 ? void 0 : reaction.emoji.name) === save) {
                         }
                         else {
                             return;
@@ -97,20 +103,20 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             });
         });
     }
-    createEmbed(user, totalPages, date = this.getDate()) {
+    createEmbed(user, page, date = this.getDate()) {
         let medals = ["[🥇]", "[🥈]", "[🥉]"];
         const embed = new discord_js_1.MessageEmbed()
             .setColor("#f59342")
             .setTitle("<:steam:852812448313507890>`Steam Rankings				📅" + date + "`")
             //display on the footer on wich page we are
-            .setFooter(`Page x / ${totalPages}`);
+            .setFooter(`Page ${page} / ${this.totalPages}`);
         //get each user
         let pos = 1;
         for (let i = 0; i < user.length; i++) {
             let name = user[i].name;
             let playtime = user[i].playtime;
             let days = user[i].days;
-            // let nSpaces = longestString(user.name) - user[i].name.length;
+            // let nSpaces = 10;
             // var spaces = "           ";
             // for (let i = 0; i < nSpaces; i++) {
             // 	spaces += " ";
@@ -148,11 +154,15 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             }
             //sort by playtime
             user.sort((a, b) => b.playtime - a.playtime);
-            let embed = this.createEmbed(user, Database_1.lastId(), record.date);
+            let embed = this.createEmbed(user, steamRecord.getLastId(), record.date);
             msg.edit(embed).then(() => {
                 msg.reactions.removeAll();
-                msg.react("⬅️");
-                msg.react("➡️");
+                if (steamRecord.getLastId() != 1) {
+                    msg.react("⬅️");
+                }
+                if (steamRecord.getLastId() != this.totalPages) {
+                    msg.react("➡️");
+                }
             });
         });
     }
@@ -161,8 +171,8 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             steam.getUserOwnedGames(id).then((games) => {
                 //hours
                 let minutes = 0;
-                for (let i = 0; i < games.length; i++) {
-                    minutes += games[i].playTime;
+                for (let game of games) {
+                    minutes += game.playTime;
                 }
                 let hours = minutes / 60;
                 hours = Math.round(hours);

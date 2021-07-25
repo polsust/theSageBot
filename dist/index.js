@@ -20,9 +20,9 @@ client.once("ready", () => {
     var _a, _b, _c;
     console.log(`Logged in as ${(_a = client.user) === null || _a === void 0 ? void 0 : _a.tag}! (${(_b = client.user) === null || _b === void 0 ? void 0 : _b.id})`);
     (_c = client.user) === null || _c === void 0 ? void 0 : _c.setActivity("you from a dark corner", { type: "WATCHING" });
-    client.channels.fetch("").then((channel) => {
-        channel.send("no");
-    });
+    // client.channels.fetch("").then((channel) => {
+    // 	(channel as TextChannel).send("no");
+    // });
 });
 client.on("error", console.error);
 client.login(config_json_1.discordToken);

@@ -16,20 +16,23 @@ const steamID = [
 	"76561199033323069", //marc
 ];
 //DATABASE
-import { insertNewRecord, getRecord, lastId } from "../../database/Database";
+import { SteamModel } from "../../database/SteamModel";
 import { SteamUser } from "../../steamUser.interface";
 
-// function longestString(strings: Object[]) {
-// 	let length: number[] = [];
+function longestString(strings: any[]) {
+	let length: number[] = [];
 
-// 	strings.forEach((element) => {
-// 		length.push(element.name.length);
-// 	});
+	strings.forEach((element) => {
+		length.push(element.name.length);
+	});
 
-// 	return (largestName = Math.max.apply(null, length));
-// }
-
+	let LongestName: number;
+	return (LongestName = Math.max.apply(null, length));
+}
+const steamRecord = new SteamModel();
 module.exports = class SteamRankings extends Command {
+	private totalPages: number = 0;
+
 	constructor(client: CommandoClient) {
 		super(client, {
 			name: "steamrankings",
@@ -42,33 +45,36 @@ module.exports = class SteamRankings extends Command {
 
 	async run(msg: CommandoMessage): Promise<any> {
 		//get names and playtimes
-		const user: SteamUser[] = [];
-		for (let i = 0; i < steamID.length; i++) {
-			const id = steamID[i];
+		const record: SteamUser[] = [];
+
+		for (let id of steamID) {
 			//get hoursPlaytime of all the users
 			let hours: any = await this.getPlaytime(id);
 			let days: any = hours / 24;
 			days = parseFloat(days.toFixed(1));
-			user.push({
+			record.push({
 				id,
 				name: await this.getName(id),
 				playtime: hours,
 				days: days,
 			});
 		}
-		insertNewRecord(user);
+
+		await steamRecord.insertNewRecord(record);
+		this.totalPages = steamRecord.getLastId();
 
 		//sort by playtime
-		user.sort((a, b) => b.playtime - a.playtime);
+		record.sort((a, b) => b.playtime - a.playtime);
 
-		let embed = this.createEmbed(user, lastId());
+		let embed = this.createEmbed(record, steamRecord.getLastId());
 
 		return msg.say(embed).then((msg) => {
 			const left = "⬅️";
 			const right = "➡️";
+			const save = "💾";
 
 			msg.react(left);
-			msg.react(right);
+			msg.react(save);
 
 			const interval = 100;
 			setInterval(() => {
@@ -83,11 +89,12 @@ module.exports = class SteamRankings extends Command {
 						const reaction: MessageReaction | undefined = collected.first();
 
 						if (reaction?.emoji.name === right) {
-							const record = await getRecord("+");
+							const record = await steamRecord.getRecord("next");
 							this.updateRecord(record, msg);
 						} else if (reaction?.emoji.name === left) {
-							const record = await getRecord("-");
+							const record = await steamRecord.getRecord("previous");
 							this.updateRecord(record, msg);
+						} else if (reaction?.emoji.name === save) {
 						} else {
 							return;
 						}
@@ -101,7 +108,7 @@ module.exports = class SteamRankings extends Command {
 
 	private createEmbed(
 		user: SteamUser[],
-		totalPages: number | any,
+		page: number | any,
 		date: string | Date = this.getDate()
 	) {
 		let medals = ["[🥇]", "[🥈]", "[🥉]"];
@@ -110,7 +117,7 @@ module.exports = class SteamRankings extends Command {
 			.setColor("#f59342")
 			.setTitle("<:steam:852812448313507890>`Steam Rankings				📅" + date + "`")
 			//display on the footer on wich page we are
-			.setFooter(`Page x / ${totalPages}`);
+			.setFooter(`Page ${page} / ${this.totalPages}`);
 
 		//get each user
 		let pos = 1;
@@ -118,7 +125,7 @@ module.exports = class SteamRankings extends Command {
 			let name = user[i].name;
 			let playtime = user[i].playtime;
 			let days = user[i].days;
-			// let nSpaces = longestString(user.name) - user[i].name.length;
+			// let nSpaces = 10;
 
 			// var spaces = "           ";
 			// for (let i = 0; i < nSpaces; i++) {
@@ -166,12 +173,15 @@ module.exports = class SteamRankings extends Command {
 		//sort by playtime
 		user.sort((a, b) => b.playtime - a.playtime);
 
-		let embed = this.createEmbed(user, lastId(), record.date);
+		let embed = this.createEmbed(user, steamRecord.getLastId(), record.date);
 		msg.edit(embed).then(() => {
 			msg.reactions.removeAll();
-
-			msg.react("⬅️");
-			msg.react("➡️");
+			if (steamRecord.getLastId() != 1) {
+				msg.react("⬅️");
+			}
+			if (steamRecord.getLastId() != this.totalPages) {
+				msg.react("➡️");
+			}
 		});
 	}
 	private getPlaytime(id: string): Promise<number> {
@@ -180,8 +190,8 @@ module.exports = class SteamRankings extends Command {
 				(games: any) => {
 					//hours
 					let minutes = 0;
-					for (let i = 0; i < games.length; i++) {
-						minutes += games[i].playTime;
+					for (let game of games) {
+						minutes += game.playTime;
 					}
 					let hours = minutes / 60;
 					hours = Math.round(hours);
@@ -206,7 +216,6 @@ module.exports = class SteamRankings extends Command {
 			);
 		});
 	}
-
 	private getDate() {
 		let today: string;
 
