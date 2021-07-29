@@ -23,14 +23,16 @@ class SteamModel extends DbConnect_1.DbConnect {
             });
         });
     }
-    getRecord(value) {
-        console.log(value);
-        if (value == "previous")
-            this.lastId -= 1;
-        if (value == "next")
-            this.lastId += 1;
+    getRecord(value, where) {
+        if (value === "previous")
+            where = this.lastId -= 1;
+        else if (value === "next")
+            where = this.lastId += 1;
+        else if (value === "first" || value === "last")
+            this.lastId = where;
         return new Promise((resolve, reject) => {
-            var request = `SELECT * FROM steam_playtime where count_id=${this.lastId}`;
+            let request = `SELECT * FROM steam_playtime where count_id=${where}`;
+            console.log(request);
             this.db.query(request, (err, result) => {
                 if (err) {
                     console.error(err);

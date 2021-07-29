@@ -51,50 +51,63 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
     run(msg) {
         return __awaiter(this, void 0, void 0, function* () {
             //get names and playtimes
-            const user = [];
+            const record = [];
             for (let id of steamID) {
                 //get hoursPlaytime of all the users
                 let hours = yield this.getPlaytime(id);
                 let days = hours / 24;
                 days = parseFloat(days.toFixed(1));
-                user.push({
+                record.push({
                     id,
                     name: yield this.getName(id),
                     playtime: hours,
                     days: days,
                 });
             }
-            yield steamRecord.insertNewRecord(user);
+            yield steamRecord.insertNewRecord(record);
             this.totalPages = steamRecord.getLastId();
             //sort by playtime
-            user.sort((a, b) => b.playtime - a.playtime);
-            let embed = this.createEmbed(user, steamRecord.getLastId());
+            record.sort((a, b) => b.playtime - a.playtime);
+            let embed = this.createEmbed(record, steamRecord.getLastId());
             return msg.say(embed).then((msg) => {
-                const left = "⬅️";
                 const right = "➡️";
+                const left = "⬅️";
+                const fastLeft = "⏪";
+                const fastRight = "⏩";
                 const save = "💾";
-                msg.react(left);
-                msg.react(save);
+                this.addReactions(msg);
                 const interval = 100;
                 setInterval(() => {
                     msg
                         .awaitReactions((reaction, user) => (reaction.emoji.name === left && user.id != msg.author.id) ||
-                        (reaction.emoji.name === right && user.id != msg.author.id), { time: interval })
+                        (reaction.emoji.name === right && user.id != msg.author.id) ||
+                        (reaction.emoji.name === fastLeft && user.id != msg.author.id) ||
+                        (reaction.emoji.name === fastRight && user.id != msg.author.id) ||
+                        (reaction.emoji.name === save && user.id != msg.author.id), { time: interval })
                         .then((collected) => __awaiter(this, void 0, void 0, function* () {
-                        const reaction = collected.first();
-                        if ((reaction === null || reaction === void 0 ? void 0 : reaction.emoji.name) === right) {
-                            const record = yield steamRecord.getRecord("next");
-                            this.updateRecord(record, msg);
+                        let reaction = collected.first();
+                        reaction = reaction.emoji.name;
+                        let record;
+                        switch (reaction) {
+                            case right:
+                                record = yield steamRecord.getRecord("next");
+                                break;
+                            case left:
+                                record = yield steamRecord.getRecord("previous");
+                                break;
+                            case fastRight:
+                                record = yield steamRecord.getRecord("last", this.totalPages);
+                                break;
+                            case fastLeft:
+                                record = yield steamRecord.getRecord("first", 1);
+                                console.log(record);
+                                break;
+                            case save:
+                                break;
+                            default:
+                                break;
                         }
-                        else if ((reaction === null || reaction === void 0 ? void 0 : reaction.emoji.name) === left) {
-                            const record = yield steamRecord.getRecord("previous");
-                            this.updateRecord(record, msg);
-                        }
-                        else if ((reaction === null || reaction === void 0 ? void 0 : reaction.emoji.name) === save) {
-                        }
-                        else {
-                            return;
-                        }
+                        this.updateRecord(record, msg);
                     }))
                         .catch((err) => {
                         // console.log("no reactions added");
@@ -156,13 +169,7 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             user.sort((a, b) => b.playtime - a.playtime);
             let embed = this.createEmbed(user, steamRecord.getLastId(), record.date);
             msg.edit(embed).then(() => {
-                msg.reactions.removeAll();
-                if (steamRecord.getLastId() != 1) {
-                    msg.react("⬅️");
-                }
-                if (steamRecord.getLastId() != this.totalPages) {
-                    msg.react("➡️");
-                }
+                this.addReactions(msg);
             });
         });
     }
@@ -190,6 +197,18 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
                 reject(error);
             });
         });
+    }
+    addReactions(msg) {
+        msg.reactions.removeAll();
+        if (steamRecord.getLastId() != 1) {
+            msg.react("⏪");
+            msg.react("⬅️");
+        }
+        msg.react("💾");
+        if (steamRecord.getLastId() != this.totalPages) {
+            msg.react("➡️");
+            msg.react("⏩");
+        }
     }
     getDate() {
         let today;

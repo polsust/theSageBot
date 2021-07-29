@@ -1,6 +1,7 @@
 import { SteamUser } from "../steamUser.interface";
 import { DbConnect } from "./DbConnect";
 
+type mode = "previous" | "next" | "first" | "last";
 export class SteamModel extends DbConnect {
 	private lastId: number = 0;
 
@@ -22,13 +23,16 @@ export class SteamModel extends DbConnect {
 			});
 		});
 	}
-	getRecord(value: string) {
-		console.log(value);
-		if (value == "previous") this.lastId -= 1;
-		if (value == "next") this.lastId += 1;
+
+	getRecord(value: mode, where?: any) {
+		if (value === "previous") where = this.lastId -= 1;
+		else if (value === "next") where = this.lastId += 1;
+		else if (value === "first" || value === "last") this.lastId = where;
 
 		return new Promise((resolve, reject) => {
-			var request = `SELECT * FROM steam_playtime where count_id=${this.lastId}`;
+			let request = `SELECT * FROM steam_playtime where count_id=${where}`;
+			console.log(request);
+
 			this.db.query(request, (err: any, result: any) => {
 				if (err) {
 					console.error(err);

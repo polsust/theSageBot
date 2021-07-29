@@ -26,9 +26,15 @@ client.once("ready", () => {
 });
 client.on("error", console.error);
 client.login(config_json_1.discordToken);
-//when a specific user sends a message, react to it with a poop emooji
+//when a specific user sends a message, react to it with a poop emoji
 client.on("message", (msg) => {
     if (msg.author.id === "244517253750456320") {
-        msg.react("💩");
+        // msg.react("💩");
+    }
+});
+//give a member a role to all new users
+client.on("guildMemberAdd", (member) => {
+    if (member.guild.id === "244135020401393665") {
+        member.roles.add("244517253750456320").catch(console.error);
     }
 });

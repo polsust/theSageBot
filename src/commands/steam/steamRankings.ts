@@ -69,12 +69,13 @@ module.exports = class SteamRankings extends Command {
 		let embed = this.createEmbed(record, steamRecord.getLastId());
 
 		return msg.say(embed).then((msg) => {
-			const left = "⬅️";
 			const right = "➡️";
+			const left = "⬅️";
+			const fastLeft = "⏪";
+			const fastRight = "⏩";
 			const save = "💾";
 
-			msg.react(left);
-			msg.react(save);
+			this.addReactions(msg);
 
 			const interval = 100;
 			setInterval(() => {
@@ -82,22 +83,38 @@ module.exports = class SteamRankings extends Command {
 					.awaitReactions(
 						(reaction, user) =>
 							(reaction.emoji.name === left && user.id != msg.author.id) ||
-							(reaction.emoji.name === right && user.id != msg.author.id),
+							(reaction.emoji.name === right && user.id != msg.author.id) ||
+							(reaction.emoji.name === fastLeft && user.id != msg.author.id) ||
+							(reaction.emoji.name === fastRight && user.id != msg.author.id) ||
+							(reaction.emoji.name === save && user.id != msg.author.id),
 						{ time: interval }
 					)
 					.then(async (collected) => {
-						const reaction: MessageReaction | undefined = collected.first();
+						let reaction: MessageReaction | any = collected.first();
+						reaction = reaction.emoji.name;
+						let record;
 
-						if (reaction?.emoji.name === right) {
-							const record = await steamRecord.getRecord("next");
-							this.updateRecord(record, msg);
-						} else if (reaction?.emoji.name === left) {
-							const record = await steamRecord.getRecord("previous");
-							this.updateRecord(record, msg);
-						} else if (reaction?.emoji.name === save) {
-						} else {
-							return;
+						switch (reaction) {
+							case right:
+								record = await steamRecord.getRecord("next");
+								break;
+							case left:
+								record = await steamRecord.getRecord("previous");
+								break;
+							case fastRight:
+								record = await steamRecord.getRecord("last", this.totalPages);
+								break;
+							case fastLeft:
+								record = await steamRecord.getRecord("first", 1);
+								console.log(record);
+
+								break;
+							case save:
+								break;
+							default:
+								break;
 						}
+						this.updateRecord(record, msg);
 					})
 					.catch((err) => {
 						// console.log("no reactions added");
@@ -175,13 +192,7 @@ module.exports = class SteamRankings extends Command {
 
 		let embed = this.createEmbed(user, steamRecord.getLastId(), record.date);
 		msg.edit(embed).then(() => {
-			msg.reactions.removeAll();
-			if (steamRecord.getLastId() != 1) {
-				msg.react("⬅️");
-			}
-			if (steamRecord.getLastId() != this.totalPages) {
-				msg.react("➡️");
-			}
+			this.addReactions(msg);
 		});
 	}
 	private getPlaytime(id: string): Promise<number> {
@@ -215,6 +226,19 @@ module.exports = class SteamRankings extends Command {
 				}
 			);
 		});
+	}
+	private addReactions(msg: CommandoMessage) {
+		msg.reactions.removeAll();
+
+		if (steamRecord.getLastId() != 1) {
+			msg.react("⏪");
+			msg.react("⬅️");
+		}
+		msg.react("💾");
+		if (steamRecord.getLastId() != this.totalPages) {
+			msg.react("➡️");
+			msg.react("⏩");
+		}
 	}
 	private getDate() {
 		let today: string;
