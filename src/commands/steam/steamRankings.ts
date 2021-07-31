@@ -1,5 +1,6 @@
-import { MessageReaction, MessageEmbed } from "discord.js";
+import { MessageReaction, MessageEmbed, Client } from "discord.js";
 import { Command, CommandoClient, CommandoMessage } from "discord.js-commando";
+import disbut, { MessageMenu, MessageMenuOption } from "discord-buttons";
 //Steam
 const SteamAPI = require("steamapi");
 import { steamToken } from "../../config.json";
@@ -18,8 +19,10 @@ const steamID = [
 //DATABASE
 import { SteamModel } from "../../database/SteamModel";
 import { SteamUser } from "../../steamUser.interface";
+import { Message } from "discord.js";
 
-function longestString(strings: any[]) {
+/* function longestString(strings: any[]) {
+	
 	let length: number[] = [];
 
 	strings.forEach((element) => {
@@ -28,10 +31,15 @@ function longestString(strings: any[]) {
 
 	let LongestName: number;
 	return (LongestName = Math.max.apply(null, length));
-}
+} */
 const steamRecord = new SteamModel();
+
+const client = new Client();
+disbut(client);
+
 module.exports = class SteamRankings extends Command {
 	private totalPages: number = 0;
+	private allRecords: any[] = [];
 
 	constructor(client: CommandoClient) {
 		super(client, {
@@ -68,6 +76,29 @@ module.exports = class SteamRankings extends Command {
 
 		let embed = this.createEmbed(record, steamRecord.getLastId());
 
+		this.allRecords = await steamRecord.getAllRecords();
+
+		let selectMenu = new MessageMenu()
+			.setID("recordSelect")
+			.setPlaceholder("Select a record to display");
+
+		// console.log(allRecords);
+
+		for (let i = 0; i < this.allRecords.length; i++) {
+			if (this.allRecords[i] == undefined) break;
+			const record = this.allRecords[i];
+
+			selectMenu.addOption(
+				new MessageMenuOption()
+					.setLabel(`${record.date} - ${record.count_id}`)
+					.setValue(`${record.count_id}`)
+					.setDescription(`${record.date} - desc`)
+					.setEmoji("👀")
+			);
+		}
+
+		msg.channel.send("Select a Record : ", selectMenu);
+
 		return msg.say(embed).then((msg) => {
 			const right = "➡️";
 			const left = "⬅️";
@@ -96,7 +127,7 @@ module.exports = class SteamRankings extends Command {
 
 						switch (reaction) {
 							case right:
-								record = await steamRecord.getRecord("next");
+								record = this.allRecords[this.totalPages - 1];
 								break;
 							case left:
 								record = await steamRecord.getRecord("previous");
@@ -227,7 +258,7 @@ module.exports = class SteamRankings extends Command {
 			);
 		});
 	}
-	private addReactions(msg: CommandoMessage) {
+	private addReactions(msg: Message | CommandoMessage) {
 		msg.reactions.removeAll();
 
 		if (steamRecord.getLastId() != 1) {

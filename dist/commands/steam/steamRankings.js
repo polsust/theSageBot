@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -11,6 +30,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const discord_js_commando_1 = require("discord.js-commando");
+const discord_buttons_1 = __importStar(require("discord-buttons"));
 //Steam
 const SteamAPI = require("steamapi");
 const config_json_1 = require("../../config.json");
@@ -28,15 +48,20 @@ const steamID = [
 ];
 //DATABASE
 const SteamModel_1 = require("../../database/SteamModel");
-function longestString(strings) {
-    let length = [];
+/* function longestString(strings: any[]) {
+    
+    let length: number[] = [];
+
     strings.forEach((element) => {
         length.push(element.name.length);
     });
-    let LongestName;
+
+    let LongestName: number;
     return (LongestName = Math.max.apply(null, length));
-}
+} */
 const steamRecord = new SteamModel_1.SteamModel();
+const client = new discord_js_1.Client();
+discord_buttons_1.default(client);
 module.exports = class SteamRankings extends discord_js_commando_1.Command {
     constructor(client) {
         super(client, {
@@ -69,6 +94,22 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             //sort by playtime
             record.sort((a, b) => b.playtime - a.playtime);
             let embed = this.createEmbed(record, steamRecord.getLastId());
+            let allRecords = yield steamRecord.getAllRecords();
+            let selectMenu = new discord_buttons_1.MessageMenu()
+                .setID("recordSelect")
+                .setPlaceholder("Select a record to display");
+            // console.log(allRecords);
+            for (let i = 0; i < allRecords.length; i++) {
+                if (allRecords[i] == undefined)
+                    break;
+                const record = allRecords[i];
+                selectMenu.addOption(new discord_buttons_1.MessageMenuOption()
+                    .setLabel(`${record.date} - ${record.count_id}`)
+                    .setValue(`${record.count_id}`)
+                    .setDescription(`${record.date} - desc`)
+                    .setEmoji("👀"));
+            }
+            msg.channel.send("Select a Record : ", selectMenu);
             return msg.say(embed).then((msg) => {
                 const right = "➡️";
                 const left = "⬅️";

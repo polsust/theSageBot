@@ -24,7 +24,7 @@ export class SteamModel extends DbConnect {
 		});
 	}
 
-	getRecord(value: mode, where?: any) {
+	getRecord(value: mode, where?: any): Promise<any> {
 		if (value === "previous") where = this.lastId -= 1;
 		else if (value === "next") where = this.lastId += 1;
 		else if (value === "first" || value === "last") this.lastId = where;
@@ -42,6 +42,21 @@ export class SteamModel extends DbConnect {
 			});
 		});
 	}
+
+	getAllRecords(): Promise<any> {
+		return new Promise((resolve, reject) => {
+			let request = `SELECT * FROM steam_playtime`;
+			
+			this.db.query(request, (err: any, result: any) => {
+				if (err) {
+					console.error(err);
+					reject(err);
+				}
+				resolve(result);
+			});
+		});
+	}
+
 	getDate() {
 		let today: string;
 

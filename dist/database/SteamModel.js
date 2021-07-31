@@ -42,6 +42,18 @@ class SteamModel extends DbConnect_1.DbConnect {
             });
         });
     }
+    getAllRecords() {
+        return new Promise((resolve, reject) => {
+            let request = `SELECT * FROM steam_playtime`;
+            this.db.query(request, (err, result) => {
+                if (err) {
+                    console.error(err);
+                    reject(err);
+                }
+                resolve(result);
+            });
+        });
+    }
     getDate() {
         let today;
         let date = new Date();
