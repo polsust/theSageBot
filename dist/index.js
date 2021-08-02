@@ -13,9 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_commando_1 = require("discord.js-commando");
+const discord_js_1 = require("discord.js");
 const path_1 = __importDefault(require("path"));
 const config_json_1 = require("./config.json");
-const discord_menus_1 = require("discord-menus");
 const client = new discord_js_commando_1.CommandoClient({
     commandPrefix: config_json_1.prefix,
     owner: "244134758286753799",
@@ -34,7 +34,6 @@ client.once("ready", () => {
 });
 client.on("error", console.error);
 client.login(config_json_1.discordToken);
-const MenusManager = new discord_menus_1.DiscordMenus(client);
 client.on("message", (msg) => __awaiter(void 0, void 0, void 0, function* () {
     if (msg.author.id === "244517253750456320") {
         // msg.react("💩");
@@ -59,7 +58,14 @@ client.on("guildMemberAdd", (member) => {
         member.roles.add("244517253750456320").catch(console.error);
     }
 });
-client.on("disconnect", () => {
-    var _a;
-    (_a = client.user) === null || _a === void 0 ? void 0 : _a.setActivity("offline");
+client.on("message", (msg) => {
+    if (msg.content.startsWith("!noche")) {
+        msg.channel.send("El señor de la noche 😎");
+    }
 });
+const discord_buttons_1 = __importDefault(require("discord-buttons"));
+const dclient = new discord_js_1.Client();
+discord_buttons_1.default(dclient);
+dclient.on("clickButton", (button) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("click");
+}));

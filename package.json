@@ -12,9 +12,7 @@
 	"license": "ISC",
 	"dependencies": {
 		"discord-buttons": "^4.0.0",
-		"discord-menus": "^1.0.8",
 		"discord.js": "^12.5.3",
-		"discord.js-commando": "^0.12.3",
 		"mysql2": "^2.2.5",
 		"steamapi": "^2.1.3"
 	},

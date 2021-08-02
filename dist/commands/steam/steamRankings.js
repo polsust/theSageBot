@@ -27,6 +27,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const discord_js_commando_1 = require("discord.js-commando");
@@ -60,8 +63,9 @@ const SteamModel_1 = require("../../database/SteamModel");
     return (LongestName = Math.max.apply(null, length));
 } */
 const steamRecord = new SteamModel_1.SteamModel();
-const client = new discord_js_1.Client();
-discord_buttons_1.default(client);
+const discord_js_2 = __importDefault(require("discord.js"));
+const Client = new discord_js_2.default.Client();
+discord_buttons_1.default(Client);
 module.exports = class SteamRankings extends discord_js_commando_1.Command {
     constructor(client) {
         super(client, {
@@ -72,50 +76,42 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
             description: "The Steam playtime rankings",
         });
         this.totalPages = 0;
+        this.allRecords = [];
+        this.currentPage = 0;
     }
     run(msg) {
         return __awaiter(this, void 0, void 0, function* () {
             //get names and playtimes
-            const record = [];
+            /* 	const record: SteamUser[] = [];
+    
             for (let id of steamID) {
                 //get hoursPlaytime of all the users
-                let hours = yield this.getPlaytime(id);
-                let days = hours / 24;
+                let hours: any = await this.getPlaytime(id);
+                let days: any = hours / 24;
                 days = parseFloat(days.toFixed(1));
                 record.push({
                     id,
-                    name: yield this.getName(id),
+                    name: await this.getName(id),
                     playtime: hours,
                     days: days,
                 });
-            }
-            yield steamRecord.insertNewRecord(record);
-            this.totalPages = steamRecord.getLastId();
+            } */
+            // await steamRecord.insertNewRecord(record);
+            this.allRecords = yield steamRecord.getAllRecords();
+            this.totalPages = this.allRecords.length;
+            this.currentPage = this.totalPages;
+            let record = this.allRecords[this.allRecords.length - 1];
             //sort by playtime
-            record.sort((a, b) => b.playtime - a.playtime);
-            let embed = this.createEmbed(record, steamRecord.getLastId());
-            let allRecords = yield steamRecord.getAllRecords();
-            let selectMenu = new discord_buttons_1.MessageMenu()
-                .setID("recordSelect")
-                .setPlaceholder("Select a record to display");
-            // console.log(allRecords);
-            for (let i = 0; i < allRecords.length; i++) {
-                if (allRecords[i] == undefined)
-                    break;
-                const record = allRecords[i];
-                selectMenu.addOption(new discord_buttons_1.MessageMenuOption()
-                    .setLabel(`${record.date} - ${record.count_id}`)
-                    .setValue(`${record.count_id}`)
-                    .setDescription(`${record.date} - desc`)
-                    .setEmoji("👀"));
-            }
-            msg.channel.send("Select a Record : ", selectMenu);
+            // record.sort((a: { playtime: number; }, b: { playtime: number; }) => b.playtime - a.playtime);
+            let users = yield this.prepareRecord(record);
+            let embed = this.createEmbed(users, this.currentPage, record.date);
             return msg.say(embed).then((msg) => {
                 const right = "➡️";
                 const left = "⬅️";
                 const fastLeft = "⏪";
                 const fastRight = "⏩";
                 const save = "💾";
+                msg.channel.send("᲼᲼᲼᲼᲼᲼", this.createSelect());
                 this.addReactions(msg);
                 const interval = 100;
                 setInterval(() => {
@@ -131,30 +127,81 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
                         let record;
                         switch (reaction) {
                             case right:
-                                record = yield steamRecord.getRecord("next");
+                                record = this.allRecords[this.currentPage];
+                                this.currentPage++;
                                 break;
                             case left:
-                                record = yield steamRecord.getRecord("previous");
+                                record = this.allRecords[this.currentPage - 2];
+                                this.currentPage--;
                                 break;
                             case fastRight:
-                                record = yield steamRecord.getRecord("last", this.totalPages);
+                                record = this.allRecords[this.totalPages - 2];
+                                this.currentPage = this.totalPages;
                                 break;
                             case fastLeft:
-                                record = yield steamRecord.getRecord("first", 1);
-                                console.log(record);
+                                record = this.allRecords[0];
+                                this.currentPage = 1;
                                 break;
                             case save:
                                 break;
                             default:
                                 break;
                         }
-                        this.updateRecord(record, msg);
+                        let users = yield this.prepareRecord(record);
+                        this.updateRecord(users, msg, record.date);
                     }))
                         .catch((err) => {
                         // console.log("no reactions added");
                     });
                 }, interval);
+                Client.on("clickButton", (button) => __awaiter(this, void 0, void 0, function* () {
+                    console.log("click");
+                }));
+                console.log("click out");
+                // const filter = (msg) => msg.clicker.user.id == msg.author.id;
             });
+        });
+    }
+    createSelect() {
+        let selectMenu = new discord_buttons_1.MessageMenu()
+            .setID("recordSelect")
+            .setPlaceholder("Select a record to display");
+        for (let i = 0; i < this.allRecords.length; i++) {
+            if (this.allRecords[i] == undefined)
+                break;
+            const record = this.allRecords[i];
+            selectMenu.addOption(new discord_buttons_1.MessageMenuOption()
+                .setLabel(`${record.date} - ${record.count_id}`)
+                .setValue(`${record.count_id}`)
+                .setDescription(`${record.date} - desc`)
+                .setEmoji("👀"));
+        }
+        return selectMenu;
+    }
+    prepareRecord(record) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let usersId = [];
+            let hours = [];
+            Object.keys(record).forEach((element) => {
+                if (element.startsWith("user_")) {
+                    let id = element.split("_")[1];
+                    hours.push(record[element]);
+                    usersId.push(id);
+                }
+            });
+            let user = [];
+            for (let i = 0; i < usersId.length; i++) {
+                let days = hours[i] / 24;
+                days = parseFloat(days.toFixed(1));
+                user.push({
+                    name: yield this.getName(usersId[i]),
+                    playtime: hours[i],
+                    days: days,
+                });
+            }
+            //sort by playtime
+            user.sort((a, b) => b.playtime - a.playtime);
+            return user;
         });
     }
     createEmbed(user, page, date = this.getDate()) {
@@ -185,30 +232,9 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
         }
         return embed;
     }
-    updateRecord(record, msg) {
+    updateRecord(users, msg, date) {
         return __awaiter(this, void 0, void 0, function* () {
-            let usersId = [];
-            let hours = [];
-            Object.keys(record).forEach((element) => {
-                if (element.startsWith("user_")) {
-                    let id = element.split("_")[1];
-                    hours.push(record[element]);
-                    usersId.push(id);
-                }
-            });
-            let user = [];
-            for (let i = 0; i < usersId.length; i++) {
-                let days = hours[i] / 24;
-                days = parseFloat(days.toFixed(1));
-                user.push({
-                    name: yield this.getName(usersId[i]),
-                    playtime: hours[i],
-                    days: days,
-                });
-            }
-            //sort by playtime
-            user.sort((a, b) => b.playtime - a.playtime);
-            let embed = this.createEmbed(user, steamRecord.getLastId(), record.date);
+            let embed = this.createEmbed(users, this.currentPage, date);
             msg.edit(embed).then(() => {
                 this.addReactions(msg);
             });
@@ -240,16 +266,24 @@ module.exports = class SteamRankings extends discord_js_commando_1.Command {
         });
     }
     addReactions(msg) {
-        msg.reactions.removeAll();
-        if (steamRecord.getLastId() != 1) {
-            msg.react("⏪");
-            msg.react("⬅️");
-        }
-        msg.react("💾");
-        if (steamRecord.getLastId() != this.totalPages) {
-            msg.react("➡️");
-            msg.react("⏩");
-        }
+        const row = new discord_buttons_1.MessageActionRow().addComponents(new discord_buttons_1.MessageButton()
+            .setID("first")
+            .setEmoji("⏮")
+            .setStyle("blurple")
+            .setDisabled(this.currentPage == 1), new discord_buttons_1.MessageButton()
+            .setID("myid1")
+            .setEmoji("⬅️")
+            .setStyle("blurple")
+            .setDisabled(this.currentPage == 1), new discord_buttons_1.MessageButton()
+            .setID("myid2")
+            .setEmoji("➡️")
+            .setStyle("blurple")
+            .setDisabled(this.currentPage == this.totalPages), new discord_buttons_1.MessageButton()
+            .setID("myid3")
+            .setEmoji("⏩")
+            .setStyle("blurple")
+            .setDisabled(this.currentPage == this.totalPages));
+        msg.channel.send("᲼᲼᲼᲼᲼᲼", row);
     }
     getDate() {
         let today;

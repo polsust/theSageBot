@@ -1,8 +1,7 @@
 import { CommandoClient } from "discord.js-commando";
-import { MessageEmbed } from "discord.js";
+import { Client } from "discord.js";
 import path from "path";
 import { prefix, discordToken } from "./config.json";
-import { DiscordMenus, MenuBuilder } from "discord-menus";
 
 const client: CommandoClient = new CommandoClient({
 	commandPrefix: prefix,
@@ -26,8 +25,6 @@ client.once("ready", () => {
 client.on("error", console.error);
 
 client.login(discordToken);
-
-const MenusManager = new DiscordMenus(client);
 
 client.on("message", async (msg) => {
 	if (msg.author.id === "244517253750456320") {
@@ -55,6 +52,18 @@ client.on("guildMemberAdd", (member) => {
 	}
 });
 
-client.on("disconnect", () => {
-	client.user?.setActivity("offline");
+client.on("message", (msg) => {
+	if (msg.content.startsWith("!noche")) {
+		msg.channel.send("El señor de la noche 😎");
+	}
+});
+
+import disbut from "discord-buttons";
+
+const dclient = new Client();
+
+disbut(dclient);
+
+dclient.on("clickButton", async (button: any) => {
+	console.log("click");
 });
