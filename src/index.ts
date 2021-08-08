@@ -1,69 +1,34 @@
-import { CommandoClient } from "discord.js-commando";
 import { Client } from "discord.js";
 import path from "path";
+import fs from "fs";
 import { prefix, discordToken } from "./config.json";
 
-const client: CommandoClient = new CommandoClient({
-	commandPrefix: prefix,
-	owner: "244134758286753799",
-});
-
-client.registry
-	.registerDefaultTypes()
-	.registerGroups([["steam"], ["other"]])
-	.registerDefaultGroups()
-	.registerDefaultCommands()
-	.registerCommandsIn(path.join(__dirname, "commands"));
+const client = new Client();
 
 client.once("ready", () => {
-	console.log(`Logged in as ${client.user?.tag}! (${client.user?.id})`);
-	// client.user?.setActivity("you from a dark corner", { type: "WATCHING" });
+	console.log(client.user?.username + " is ready!");
 
-	client.user?.setStatus("idle");
+	const baseFile = "command-base.js";
+	const commandBase = require(`./commands/${baseFile}`);
+
+	const readCommands = (dir: string) => {
+		// console.log(path.join(__dirname, dir));
+
+		const files: any = fs.readdirSync(path.join(__dirname, dir));
+
+		for (const file of files) {
+			const stat = fs.lstatSync(path.join(__dirname, dir, file));
+			if (stat.isDirectory()) {
+				readCommands(path.join(dir, file));
+			} else if (file != baseFile) {
+				const option = require(path.join(__dirname, dir, file));
+				commandBase(client, option);
+			}
+		}
+	};
+
+	readCommands("commands");
 });
-
-client.on("error", console.error);
 
 client.login(discordToken);
 
-client.on("message", async (msg) => {
-	if (msg.author.id === "244517253750456320") {
-		// msg.react("💩");
-	}
-
-	/* 	const menu = new MessageMenuOptions()
-		.addLabel("Value 1", {
-			description: "This the value 1 description",
-			value: "value-1",
-		})
-		.setMaxValues(3)
-		.setMinValues(1)
-		.setCustomID("cool-custom-id")
-		.setPlaceHolder("Select an option");
-
-	await MenusManager.sendMenu(msg, "content", { menu }).catch((err) => {
-		console.error(err);
-	}); */
-});
-//give a member a role to all new users
-client.on("guildMemberAdd", (member) => {
-	if (member.guild.id === "244135020401393665") {
-		member.roles.add("244517253750456320").catch(console.error);
-	}
-});
-
-client.on("message", (msg) => {
-	if (msg.content.startsWith("!noche")) {
-		msg.channel.send("El señor de la noche 😎");
-	}
-});
-
-import disbut from "discord-buttons";
-
-const dclient = new Client();
-
-disbut(dclient);
-
-dclient.on("clickButton", async (button: any) => {
-	console.log("click");
-});
