@@ -1,9 +1,11 @@
 import { MessageReaction, MessageEmbed, Message } from "discord.js";
-import disbut, {
-	MessageActionRow,
-	MessageButton,
-	MessageMenu,
+
+import {
 	MessageMenuOption,
+	MessageMenu,
+	MessageButton,
+	MessageActionRow,
+	MessageComponent,
 } from "discord-buttons";
 //Steam
 const SteamAPI = require("steamapi");
@@ -23,133 +25,173 @@ const steamID = [
 //DATABASE
 import { SteamModel } from "../database/SteamModel";
 import { SteamUser } from "../steamUser.interface";
+import { Client } from "discord.js";
 
 /* function longestString(strings: any[]) {
-	
 	let length: number[] = [];
-
 	strings.forEach((element) => {
 		length.push(element.name.length);
 	});
-
 	let LongestName: number;
 	return (LongestName = Math.max.apply(null, length));
 } */
 
-import Discord from "discord.js";
-const Client = new Discord.Client();
-disbut(Client);
-
 module.exports = {
-	commands: ["steamRankings", "s", "steamRanking"],
+	commands: ["steamRankings", "s", "steamRanking", "sr", "rankings"],
 	theClass: class SteamRankings {
 		private totalPages: number = 0;
 		private allRecords: any[] = [];
+		private preparedRecords: any[] = [];
+
 		private currentPage: number = 0;
 		private steamRecord: SteamModel;
 		constructor() {
 			this.steamRecord = new SteamModel();
 		}
 
-		async onInit(msg: Message) {
-			//get names and playtimes
-			/* 	const record: SteamUser[] = [];
-
-		for (let id of steamID) {
-			//get hoursPlaytime of all the users
-			let hours: any = await this.getPlaytime(id);
-			let days: any = hours / 24;
-			days = parseFloat(days.toFixed(1));
-			record.push({
-				id,
-				name: await this.getName(id),
-				playtime: hours,
-				days: days,
-			});
-		} */
-			// await steamRecord.insertNewRecord(record);
+		async onInit(msg: Message, client: Client) {
+			let loadingMsg = await msg.channel.send("❌❌❌❌❌");
+			this.animateLoading(loadingMsg, 0);
 
 			this.allRecords = await this.steamRecord.getAllRecords();
 			this.totalPages = this.allRecords.length;
 			this.currentPage = this.totalPages;
 
+			this.animateLoading(loadingMsg, 1);
+
 			let record = this.allRecords[this.allRecords.length - 1];
 
-			//sort by playtime
-			// record.sort((a: { playtime: number; }, b: { playtime: number; }) => b.playtime - a.playtime);
+			this.preparedRecords = await this.prepareRecords(this.allRecords);
+			console.log(this.preparedRecords);
 
-			let users: SteamUser[] = await this.prepareRecord(record);
-			let embed = this.createEmbed(users, this.currentPage, record.date);
+			this.animateLoading(loadingMsg, 2);
+
+			let embed = this.createEmbed(
+				this.preparedRecords[this.totalPages - 1],
+				this.currentPage,
+				record.date
+			);
+			this.animateLoading(loadingMsg, 3);
+
 			let row = new MessageActionRow().addComponent(this.createSelect());
+			let row2 = new MessageActionRow().addComponents(...this.createButtons());
 
+			this.animateLoading(loadingMsg, 4);
+			await loadingMsg.delete();
 			msg.channel
 				.send({
-					content: embed,
-					components: [row],
+					embed: embed,
+					components: [row, row2],
 				})
-				.then(async (msg: Message) => {
-					console.log(msg);
+				.then(async (msg: Message | Message[] | any) => {
+					client.on("clickMenu", async (menu: MessageComponent) => {
+						if (menu.values === undefined) return;
 
-					const right = "➡️";
-					const left = "⬅️";
-					const fastLeft = "⏪";
-					const fastRight = "⏩";
-					const save = "💾";
+						let index = parseInt(menu.values[0]);
+						this.currentPage = index;
+						index--;
 
-					await this.addReactions(msg);
+						await this.updateRecord(
+							this.preparedRecords[index],
+							msg,
+							this.allRecords[index].date
+						);
+						menu.reply.defer(true);
+					});
+					client.on("clickButton", async (button: MessageComponent) => {
+						console.log(button.id);
+						let index: number = 0;
 
-					const interval = 100;
-					setInterval(() => {
-						msg
-							.awaitReactions(
-								(reaction: any, user: any) =>
-									(reaction.emoji.name === left && user.id != msg.author.id) ||
-									(reaction.emoji.name === right && user.id != msg.author.id) ||
-									(reaction.emoji.name === fastLeft &&
-										user.id != msg.author.id) ||
-									(reaction.emoji.name === fastRight &&
-										user.id != msg.author.id) ||
-									(reaction.emoji.name === save && user.id != msg.author.id),
-								{ time: interval }
-							)
-							.then(async (collected: any) => {
-								let reaction: MessageReaction | any = collected.first();
-								reaction = reaction.emoji.name;
-								let record;
+						switch (button.id) {
+							case "first":
+								index = 0;
+								this.currentPage = 1;
+								break;
+							case "previous":
+								index = this.currentPage - 2;
+								this.currentPage--;
+								break;
+							case "new":
+								let newRecord = await this.addNewRecord(msg);
+								this.preparedRecords.push(newRecord);
 
-								switch (reaction) {
-									case right:
-										record = this.allRecords[this.currentPage];
-										this.currentPage++;
-										break;
-									case left:
-										record = this.allRecords[this.currentPage - 2];
-										this.currentPage--;
-										break;
-									case fastRight:
-										record = this.allRecords[this.totalPages - 2];
-										this.currentPage = this.totalPages;
-										break;
-									case fastLeft:
-										record = this.allRecords[0];
-										this.currentPage = 1;
+								let count_id = this.totalPages + 1;
+								let newRecordData = {
+									date: this.getDate(),
+									count_id,
+								};
+								this.allRecords.push(newRecordData);
 
-										break;
-									case save:
-										break;
-									default:
-										break;
-								}
-								let users: SteamUser[] = await this.prepareRecord(record);
-								this.updateRecord(users, msg, record.date);
-							})
-							.catch((err: any) => {
-								// console.log("no reactions added");
-							});
-					}, interval);
+								index = this.totalPages - 1;
+								this.currentPage = this.totalPages;
+								break;
+							case "next":
+								index = this.currentPage;
+								this.currentPage++;
+								break;
+							case "last":
+								index = this.totalPages - 1;
+								this.currentPage = this.totalPages;
+								break;
+						}
+
+						if (index < 0) {
+							index = 0;
+						} else if (index > this.totalPages - 1) {
+							index = this.totalPages - 1;
+						}
+						if (this.currentPage < 1) {
+							this.currentPage = 1;
+						} else if (this.currentPage > this.totalPages) {
+							this.currentPage = this.totalPages;
+						}
+
+						await this.updateRecord(
+							this.preparedRecords[index],
+							msg,
+							this.allRecords[index].date
+						);
+						button.reply.defer(true);
+					});
 				});
 		}
+		private async addNewRecord(msg: Message) {
+			// get names and playtimes
+			const record: SteamUser[] = [];
 
+			for (const id of steamID) {
+				// get hoursPlaytime of all the users
+				let hours: any = await this.getPlaytime(id);
+				let days: any = hours / 24;
+				days = parseFloat(days.toFixed(1));
+				record.push({
+					id,
+					name: await this.getName(id),
+					playtime: hours,
+					days: days,
+				});
+			}
+			// sort by playtime
+			record.sort(
+				(a: { playtime: number }, b: { playtime: number }) =>
+					b.playtime - a.playtime
+			);
+			await this.steamRecord.insertNewRecord(record).catch((err) => {
+				msg.channel.send(err);
+			});
+			return record;
+		}
+		private animateLoading(msg: Message, index: number) {
+			let states = [
+				"✅❌❌❌❌",
+				"✅✅❌❌❌",
+				"✅✅✅❌❌",
+				"✅✅✅✅❌",
+				"✅✅✅✅✅",
+			];
+
+			msg.edit(states[index]);
+		}
 		private createSelect(): MessageMenu {
 			let selectMenu = new MessageMenu()
 				.setID("recordSelect")
@@ -164,42 +206,74 @@ module.exports = {
 						.setLabel(`${record.date} - ${record.count_id}`)
 						.setValue(`${record.count_id}`)
 						.setDescription(`${record.date} - desc`)
-						.setEmoji("👀")
+						.setEmoji("874310019674406953")
 				);
 			}
 
 			return selectMenu;
 		}
-		private async prepareRecord(record: any) {
-			let usersId: string[] = [];
-			let hours: any[] = [];
+		private createButtons(): MessageButton[] {
+			return [
+				new MessageButton()
+					.setID("first")
+					.setEmoji("⏮")
+					.setStyle("blurple")
+					.setDisabled(this.currentPage == 1),
+				new MessageButton()
+					.setID("previous")
+					.setEmoji("⬅️")
+					.setStyle("blurple")
+					.setDisabled(this.currentPage == 1),
+				new MessageButton().setID("new").setEmoji("➕").setStyle("green"),
+				new MessageButton()
+					.setID("next")
+					.setEmoji("➡️")
+					.setStyle("blurple")
+					.setDisabled(this.currentPage == this.totalPages),
+				new MessageButton()
+					.setID("last")
+					.setEmoji("⏩")
+					.setStyle("blurple")
+					.setDisabled(this.currentPage == this.totalPages),
+			];
+		}
+		private async prepareRecords(records: any[]) {
+			console.log(records);
 
-			Object.keys(record).forEach((element) => {
-				if (element.startsWith("user_")) {
-					let id = element.split("_")[1];
-					hours.push(record[element]);
+			let preparedRecords = [];
+			for (const record of records) {
+				let usersId: string[] = [];
+				let hours: any[] = [];
 
-					usersId.push(id);
-				}
-			});
+				Object.keys(record).forEach((element) => {
+					if (element.startsWith("user_")) {
+						let id = element.split("_")[1];
+						hours.push(record[element]);
 
-			let user: SteamUser[] = [];
-
-			for (let i = 0; i < usersId.length; i++) {
-				let days: number = hours[i] / 24;
-				days = parseFloat(days.toFixed(1));
-
-				user.push({
-					name: await this.getName(usersId[i]),
-					playtime: hours[i],
-					days: days,
+						usersId.push(id);
+					}
 				});
+
+				let users: SteamUser[] = [];
+
+				for (let i = 0; i < usersId.length; i++) {
+					let days: number = hours[i] / 24;
+					days = parseFloat(days.toFixed(1));
+
+					users.push({
+						name: await this.getName(usersId[i]),
+						playtime: hours[i],
+						days: days,
+					});
+				}
+
+				//sort by playtime
+				users.sort((a, b) => b.playtime - a.playtime);
+
+				preparedRecords.push(users);
 			}
 
-			//sort by playtime
-			user.sort((a, b) => b.playtime - a.playtime);
-
-			return user;
+			return preparedRecords;
 		}
 		private createEmbed(
 			user: SteamUser[],
@@ -210,7 +284,9 @@ module.exports = {
 
 			const embed: MessageEmbed = new MessageEmbed()
 				.setColor("#f59342")
-				.setTitle("<:steam:852812448313507890>`Steam Rankings				📅" + date + "`")
+				.setTitle(
+					"<:steam:852812448313507890>`Steam Rankings		     		📅" + date + "`"
+				)
 				//display on the footer on wich page we are
 				.setFooter(`Page ${page} / ${this.totalPages}`);
 
@@ -241,13 +317,15 @@ module.exports = {
 		}
 		private async updateRecord(
 			users: SteamUser[],
-			msg: Message,
+			msg: any,
 			date: string | Date
 		) {
 			let embed = this.createEmbed(users, this.currentPage, date);
-			msg.edit(embed).then(() => {
-				this.addReactions(msg);
-			});
+
+			let row = new MessageActionRow().addComponent(this.createSelect());
+			let row2 = new MessageActionRow().addComponents(...this.createButtons());
+
+			await msg.edit({ content: embed, components: [row, row2] });
 		}
 		private getPlaytime(id: string): Promise<number> {
 			return new Promise((resolve, reject) => {
@@ -270,7 +348,7 @@ module.exports = {
 			});
 		}
 		private getName(id: String | Number): Promise<string> {
-			return new Promise(function (resolve, reject) {
+			return new Promise((resolve, reject) => {
 				steam.getUserSummary(id).then(
 					(result: { nickname: string | PromiseLike<string> }) => {
 						resolve(result.nickname);
@@ -281,48 +359,20 @@ module.exports = {
 				);
 			});
 		}
-		private async addReactions(msg: Message) {
-			const row = new MessageActionRow().addComponents(
-				new MessageButton()
-					.setID("first")
-					.setEmoji("⏮")
-					.setStyle("blurple")
-					.setDisabled(this.currentPage == 1),
-
-				new MessageButton()
-					.setID("previous")
-					.setEmoji("⬅️")
-					.setStyle("blurple")
-					.setDisabled(this.currentPage == 1),
-
-				new MessageButton()
-					.setID("next")
-					.setEmoji("➡️")
-					.setStyle("blurple")
-					.setDisabled(this.currentPage == this.totalPages),
-
-				new MessageButton()
-					.setID("last")
-					.setEmoji("⏩")
-					.setStyle("blurple")
-					.setDisabled(this.currentPage == this.totalPages)
-			);
-
-			let embed = new MessageEmbed();
-
-			// const buttons = await msg.channel.send({ message: embed, component: row });
-
-			// let filter = (b) => ["first", "last", "next", "previous"].includes(b.id);
-			// const col = await buttons.createButtonCollector(filter);
-		}
-
 		private getDate() {
 			let today: string;
 
 			let date = new Date();
-			let day = date.getDate();
-			let month = date.getMonth() + 1;
+			let day: number | string = date.getDate();
+			let month: number | string = date.getMonth() + 1;
 			let year = date.getFullYear();
+
+			if (day.toString().length == 1) {
+				day = "0" + day;
+			}
+			if (month.toString().length == 1) {
+				month = "0" + month;
+			}
 
 			return (today = `${day}/${month}/${year}`);
 		}

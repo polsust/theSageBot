@@ -9,8 +9,8 @@ module.exports = (client, commandOptions) => {
         if (!content.startsWith(config_json_1.prefix))
             return;
         for (const command of commands) {
-            if (content.toLowerCase().startsWith(`${config_json_1.prefix}${command.toLowerCase()}`)) {
-                new theClass().onInit(msg);
+            if (content.toLowerCase() === `${config_json_1.prefix}${command.toLowerCase()}`) {
+                new theClass().onInit(msg, client);
                 return;
             }
         }

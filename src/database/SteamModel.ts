@@ -46,7 +46,7 @@ export class SteamModel extends DbConnect {
 	getAllRecords(): Promise<any> {
 		return new Promise((resolve, reject) => {
 			let request = `SELECT * FROM steam_playtime`;
-			
+
 			this.db.query(request, (err: any, result: any) => {
 				if (err) {
 					console.error(err);
@@ -61,9 +61,16 @@ export class SteamModel extends DbConnect {
 		let today: string;
 
 		let date = new Date();
-		let day = date.getDate();
-		let month = date.getMonth() + 1;
+		let day: number | string = date.getDate();
+		let month: number | string = date.getMonth() + 1;
 		let year = date.getFullYear();
+
+		if (day.toString().length == 1) {
+			day = "0" + day;
+		}
+		if (month.toString().length == 1) {
+			month = "0" + month;
+		}
 
 		return (today = `${day}/${month}/${year}`);
 	}

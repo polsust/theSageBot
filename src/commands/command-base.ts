@@ -1,4 +1,5 @@
-import { Client, Message } from "discord.js";
+import { Client } from "discord.js";
+import { Message } from "discord.js";
 import { prefix } from "../config.json";
 
 export = (client: Client, commandOptions: any) => {
@@ -11,10 +12,8 @@ export = (client: Client, commandOptions: any) => {
 		if (!content.startsWith(prefix)) return;
 
 		for (const command of commands) {
-			if (
-				content.toLowerCase().startsWith(`${prefix}${command.toLowerCase()}`)
-			) {
-				new theClass().onInit(msg);
+			if (content.toLowerCase() === `${prefix}${command.toLowerCase()}`) {
+				new theClass().onInit(msg, client);
 
 				return;
 			}
