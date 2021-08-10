@@ -54,6 +54,18 @@ class SteamModel extends DbConnect_1.DbConnect {
             });
         });
     }
+    deleteRecordById(id) {
+        return new Promise((resolve, reject) => {
+            let request = `DELETE FROM steam_playtime WHERE count_id=${id}`;
+            this.db.query(request, (err, result) => {
+                if (err) {
+                    console.error(err);
+                    reject(err);
+                }
+                resolve(result);
+            });
+        });
+    }
     getDate() {
         let today;
         let date = new Date();

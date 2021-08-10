@@ -53,15 +53,26 @@ module.exports = {
                 this.allRecords = yield this.steamRecord.getAllRecords();
                 this.totalPages = this.allRecords.length;
                 this.currentPage = this.totalPages;
+                this.allRecords = this.allRecords.sort((a, b) => a.count_id - b.count_id);
+                for (const record of this.allRecords) {
+                    let dateArr = record.date.split("/");
+                    let date = new Date(dateArr[2], parseInt(dateArr[1]) - 1, parseInt(dateArr[0]) + 1);
+                    record.timeSince = this.getTimeSince(date);
+                    for (const key in record) {
+                        if (record[key] === null) {
+                            delete record[key];
+                        }
+                    }
+                }
                 this.animateLoading(loadingMsg, 1);
                 let record = this.allRecords[this.allRecords.length - 1];
                 this.preparedRecords = yield this.prepareRecords(this.allRecords);
                 console.log(this.preparedRecords);
                 this.animateLoading(loadingMsg, 2);
-                let embed = this.createEmbed(this.preparedRecords[this.totalPages - 1], this.currentPage, record.date);
+                let embed = this.createEmbed(this.preparedRecords[this.totalPages - 1], this.currentPage, record.date, record.timeSince);
                 this.animateLoading(loadingMsg, 3);
                 let row = new discord_buttons_1.MessageActionRow().addComponent(this.createSelect());
-                let row2 = new discord_buttons_1.MessageActionRow().addComponents(...this.createButtons());
+                let row2 = new discord_buttons_1.MessageActionRow().addComponents(...this.createButtons().set1);
                 this.animateLoading(loadingMsg, 4);
                 yield loadingMsg.delete();
                 msg.channel
@@ -76,40 +87,74 @@ module.exports = {
                         let index = parseInt(menu.values[0]);
                         this.currentPage = index;
                         index--;
-                        yield this.updateRecord(this.preparedRecords[index], msg, this.allRecords[index].date);
+                        yield this.updateRecord(this.preparedRecords[index], msg, this.allRecords[index].date, this.allRecords[index].timeSince, this.createButtons().set1);
                         menu.reply.defer(true);
                     }));
                     client.on("clickButton", (button) => __awaiter(this, void 0, void 0, function* () {
-                        console.log(button.id);
                         let index = 0;
+                        let setOfButtons = this.createButtons().set1;
+                        let replied = false;
                         switch (button.id) {
                             case "first":
                                 index = 0;
                                 this.currentPage = 1;
+                                setOfButtons = this.createButtons().set1;
                                 break;
                             case "previous":
                                 index = this.currentPage - 2;
                                 this.currentPage--;
+                                setOfButtons = this.createButtons().set1;
+                                break;
+                            case "more":
+                                index = this.currentPage - 1;
+                                setOfButtons = this.createButtons().set2;
                                 break;
                             case "new":
-                                let newRecord = yield this.addNewRecord(msg);
-                                this.preparedRecords.push(newRecord);
+                                let loadingMsg = yield button.reply.send("Adding new record...");
+                                replied = true;
+                                this.preparedRecords.push(yield this.addNewRecord(msg));
                                 let count_id = this.totalPages + 1;
                                 let newRecordData = {
                                     date: this.getDate(),
                                     count_id,
                                 };
                                 this.allRecords.push(newRecordData);
+                                this.totalPages++;
                                 index = this.totalPages - 1;
                                 this.currentPage = this.totalPages;
+                                loadingMsg.delete();
+                                setOfButtons = this.createButtons().set1;
+                                break;
+                            case "delete":
+                                index = this.currentPage - 1;
+                                setOfButtons = this.createButtons().set3;
+                                break;
+                            case "no":
+                                index = this.currentPage - 1;
+                                setOfButtons = this.createButtons().set2;
+                                break;
+                            case "yes":
+                                index = this.currentPage - 1;
+                                yield this.steamRecord.deleteRecordById(this.allRecords[index].count_id);
+                                this.allRecords.splice(index, 1);
+                                this.preparedRecords.splice(index, 1);
+                                this.totalPages--;
+                                this.currentPage = this.totalPages;
+                                setOfButtons = this.createButtons().set1;
+                                break;
+                            case "goBack":
+                                index = this.currentPage - 1;
+                                setOfButtons = this.createButtons().set1;
                                 break;
                             case "next":
                                 index = this.currentPage;
                                 this.currentPage++;
+                                setOfButtons = this.createButtons().set1;
                                 break;
                             case "last":
                                 index = this.totalPages - 1;
                                 this.currentPage = this.totalPages;
+                                setOfButtons = this.createButtons().set1;
                                 break;
                         }
                         if (index < 0) {
@@ -124,8 +169,12 @@ module.exports = {
                         else if (this.currentPage > this.totalPages) {
                             this.currentPage = this.totalPages;
                         }
-                        yield this.updateRecord(this.preparedRecords[index], msg, this.allRecords[index].date);
-                        button.reply.defer(true);
+                        console.log(index);
+                        yield this.updateRecord(this.preparedRecords[index], msg, this.allRecords[index].date, this.allRecords[index].timeSince, setOfButtons);
+                        if (!replied) {
+                            button.reply.defer(true);
+                        }
+                        return;
                     }));
                 }));
             });
@@ -172,43 +221,73 @@ module.exports = {
                 if (this.allRecords[i] == undefined)
                     break;
                 const record = this.allRecords[i];
+                i++;
                 selectMenu.addOption(new discord_buttons_1.MessageMenuOption()
-                    .setLabel(`${record.date} - ${record.count_id}`)
-                    .setValue(`${record.count_id}`)
-                    .setDescription(`${record.date} - desc`)
+                    .setLabel(`${record.date} - ${i}`)
+                    .setValue(`${i}`)
                     .setEmoji("874310019674406953"));
+                i--;
             }
             return selectMenu;
         }
         createButtons() {
-            return [
-                new discord_buttons_1.MessageButton()
-                    .setID("first")
-                    .setEmoji("⏮")
-                    .setStyle("blurple")
-                    .setDisabled(this.currentPage == 1),
-                new discord_buttons_1.MessageButton()
-                    .setID("previous")
-                    .setEmoji("⬅️")
-                    .setStyle("blurple")
-                    .setDisabled(this.currentPage == 1),
-                new discord_buttons_1.MessageButton().setID("new").setEmoji("➕").setStyle("green"),
-                new discord_buttons_1.MessageButton()
-                    .setID("next")
-                    .setEmoji("➡️")
-                    .setStyle("blurple")
-                    .setDisabled(this.currentPage == this.totalPages),
-                new discord_buttons_1.MessageButton()
-                    .setID("last")
-                    .setEmoji("⏩")
-                    .setStyle("blurple")
-                    .setDisabled(this.currentPage == this.totalPages),
-            ];
+            return {
+                set1: [
+                    new discord_buttons_1.MessageButton()
+                        .setID("first")
+                        .setEmoji("874592110693736478")
+                        .setStyle("blurple")
+                        .setDisabled(this.currentPage == 1),
+                    new discord_buttons_1.MessageButton()
+                        .setID("previous")
+                        .setEmoji("874592023942922250")
+                        .setStyle("blurple")
+                        .setDisabled(this.currentPage == 1),
+                    new discord_buttons_1.MessageButton()
+                        .setID("more")
+                        .setEmoji("874591879050706984")
+                        .setStyle("green"),
+                    new discord_buttons_1.MessageButton()
+                        .setID("next")
+                        .setEmoji("874591944402173962")
+                        .setStyle("blurple")
+                        .setDisabled(this.currentPage == this.totalPages),
+                    new discord_buttons_1.MessageButton()
+                        .setID("last")
+                        .setEmoji("874592072764624938")
+                        .setStyle("blurple")
+                        .setDisabled(this.currentPage == this.totalPages),
+                ],
+                set2: [
+                    new discord_buttons_1.MessageButton()
+                        .setID("goBack")
+                        .setEmoji("874593691212341298")
+                        .setStyle("blurple"),
+                    new discord_buttons_1.MessageButton()
+                        .setID("delete")
+                        .setEmoji("874594197796171776")
+                        .setStyle("red"),
+                    new discord_buttons_1.MessageButton()
+                        .setID("new")
+                        .setEmoji("874592168000507954")
+                        .setStyle("green"),
+                ],
+                set3: [
+                    new discord_buttons_1.MessageButton()
+                        .setID("no")
+                        .setEmoji("874592211914866769")
+                        .setStyle("red"),
+                    new discord_buttons_1.MessageButton()
+                        .setID("yes")
+                        .setEmoji("874592249219022869")
+                        .setStyle("green"),
+                ],
+            };
         }
         prepareRecords(records) {
             return __awaiter(this, void 0, void 0, function* () {
-                console.log(records);
                 let preparedRecords = [];
+                let parsedUsers = [];
                 for (const record of records) {
                     let usersId = [];
                     let hours = [];
@@ -223,8 +302,24 @@ module.exports = {
                     for (let i = 0; i < usersId.length; i++) {
                         let days = hours[i] / 24;
                         days = parseFloat(days.toFixed(1));
+                        let parsedName = "";
+                        let needToParseName = true;
+                        for (const user of parsedUsers) {
+                            if (usersId[i] == user.id) {
+                                parsedName = user.name;
+                                needToParseName = false;
+                                break;
+                            }
+                        }
+                        if (needToParseName) {
+                            parsedName = yield this.getName(usersId[i]);
+                        }
+                        parsedUsers.push({
+                            id: usersId[i],
+                            name: parsedName,
+                        });
                         users.push({
-                            name: yield this.getName(usersId[i]),
+                            name: parsedName,
                             playtime: hours[i],
                             days: days,
                         });
@@ -236,12 +331,14 @@ module.exports = {
                 return preparedRecords;
             });
         }
-        createEmbed(user, page, date = this.getDate()) {
+        createEmbed(user, page, date, timeSince) {
             let medals = ["[🥇]", "[🥈]", "[🥉]"];
+            if (timeSince === undefined)
+                timeSince = "Seconds";
             const embed = new discord_js_1.MessageEmbed()
                 .setColor("#f59342")
-                .setTitle("<:steam:852812448313507890>`Steam Rankings		     		📅" + date + "`")
-                //display on the footer on wich page we are
+                .setTitle(`<:steam:852812448313507890>\`Steam Rankings ${timeSince} ago 📅 ${date}  \``)
+                //display on the footer on witch page we are
                 .setFooter(`Page ${page} / ${this.totalPages}`);
             //get each user
             let pos = 1;
@@ -249,11 +346,6 @@ module.exports = {
                 let name = user[i].name;
                 let playtime = user[i].playtime;
                 let days = user[i].days;
-                // let nSpaces = 10;
-                // var spaces = "           ";
-                // for (let i = 0; i < nSpaces; i++) {
-                // 	spaces += " ";
-                // }
                 let award;
                 medals[i] != null ? (award = medals[i]) : (award = "");
                 embed.addFields({
@@ -264,11 +356,11 @@ module.exports = {
             }
             return embed;
         }
-        updateRecord(users, msg, date) {
+        updateRecord(users, msg, date, timeSince, setOfButtons) {
             return __awaiter(this, void 0, void 0, function* () {
-                let embed = this.createEmbed(users, this.currentPage, date);
+                let embed = this.createEmbed(users, this.currentPage, date, timeSince);
                 let row = new discord_buttons_1.MessageActionRow().addComponent(this.createSelect());
-                let row2 = new discord_buttons_1.MessageActionRow().addComponents(...this.createButtons());
+                let row2 = new discord_buttons_1.MessageActionRow().addComponents(...setOfButtons);
                 yield msg.edit({ content: embed, components: [row, row2] });
             });
         }
@@ -310,6 +402,30 @@ module.exports = {
                 month = "0" + month;
             }
             return (today = `${day}/${month}/${year}`);
+        }
+        getTimeSince(date) {
+            let theDateStamp = date.getTime();
+            let todayStamp = new Date().getTime();
+            let miliseconds = todayStamp - theDateStamp;
+            let minutes = miliseconds / 60000;
+            let hours = minutes / 60;
+            let days = hours / 24;
+            console.log(minutes);
+            if (days < 1) {
+                return `Less than a day`;
+            }
+            else if (days >= 365) {
+                let years = days / 365;
+                return `${years.toFixed(1)} Years`;
+            }
+            else if (days >= 30) {
+                let months = days / 30;
+                return `${months.toFixed(0)} Months`;
+            }
+            else if (days >= 1) {
+                return `${days.toFixed(0)} Days`;
+            }
+            return "ERROR";
         }
     },
 };

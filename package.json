@@ -11,8 +11,10 @@
 	"author": "iCoolSkeleton95",
 	"license": "ISC",
 	"dependencies": {
+		"@discordjs/opus": "github:discordjs/opus",
 		"discord-buttons": "^4.0.0",
 		"discord.js": "^12.5.3",
+		"ffmpeg-static": "^4.4.0",
 		"mysql2": "^2.2.5",
 		"steamapi": "^2.1.3"
 	},
