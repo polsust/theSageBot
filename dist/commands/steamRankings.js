@@ -13,8 +13,7 @@ const discord_js_1 = require("discord.js");
 const discord_buttons_1 = require("discord-buttons");
 //Steam
 const SteamAPI = require("steamapi");
-const config_json_1 = require("../config.json");
-const steam = new SteamAPI(config_json_1.steamToken);
+const steam = new SteamAPI(process.env.STEAM_KEY);
 const steamID = [
     "76561198298126172",
     "76561198299951692",
@@ -28,14 +27,6 @@ const steamID = [
 ];
 //DATABASE
 const SteamModel_1 = require("../database/SteamModel");
-/* function longestString(strings: any[]) {
-    let length: number[] = [];
-    strings.forEach((element) => {
-        length.push(element.name.length);
-    });
-    let LongestName: number;
-    return (LongestName = Math.max.apply(null, length));
-} */
 module.exports = {
     commands: ["steamRankings", "s", "steamRanking", "sr", "rankings"],
     theClass: class SteamRankings {
@@ -48,7 +39,7 @@ module.exports = {
         }
         onInit(msg, client) {
             return __awaiter(this, void 0, void 0, function* () {
-                let loadingMsg = yield msg.channel.send("❌❌❌❌❌");
+                let loadingMsg = yield msg.channel.send("❌❌❌❌");
                 this.animateLoading(loadingMsg, 0);
                 this.allRecords = yield this.steamRecord.getAllRecords();
                 this.totalPages = this.allRecords.length;
@@ -70,10 +61,9 @@ module.exports = {
                 console.log(this.preparedRecords);
                 this.animateLoading(loadingMsg, 2);
                 let embed = this.createEmbed(this.preparedRecords[this.totalPages - 1], this.currentPage, record.date, record.timeSince);
-                this.animateLoading(loadingMsg, 3);
                 let row = new discord_buttons_1.MessageActionRow().addComponent(this.createSelect());
                 let row2 = new discord_buttons_1.MessageActionRow().addComponents(...this.createButtons().set1);
-                this.animateLoading(loadingMsg, 4);
+                this.animateLoading(loadingMsg, 3);
                 yield loadingMsg.delete();
                 msg.channel
                     .send({
@@ -112,12 +102,13 @@ module.exports = {
                             case "new":
                                 let loadingMsg = yield button.reply.send("Adding new record...");
                                 replied = true;
-                                this.preparedRecords.push(yield this.addNewRecord(msg));
-                                let count_id = this.totalPages + 1;
+                                let newRecord = yield this.addNewRecord(msg);
+                                this.preparedRecords.push(newRecord[0]);
                                 let newRecordData = {
                                     date: this.getDate(),
-                                    count_id,
+                                    count_id: newRecord[1],
                                 };
+                                console.log(newRecordData);
                                 this.allRecords.push(newRecordData);
                                 this.totalPages++;
                                 index = this.totalPages - 1;
@@ -135,7 +126,12 @@ module.exports = {
                                 break;
                             case "yes":
                                 index = this.currentPage - 1;
-                                yield this.steamRecord.deleteRecordById(this.allRecords[index].count_id);
+                                console.log(this.allRecords[index]);
+                                yield this.steamRecord
+                                    .deleteRecordById(this.allRecords[index].count_id)
+                                    .catch((err) => {
+                                    msg.channel.send(err);
+                                });
                                 this.allRecords.splice(index, 1);
                                 this.preparedRecords.splice(index, 1);
                                 this.totalPages--;
@@ -197,20 +193,16 @@ module.exports = {
                 }
                 // sort by playtime
                 record.sort((a, b) => b.playtime - a.playtime);
-                yield this.steamRecord.insertNewRecord(record).catch((err) => {
+                const count_id = yield this.steamRecord
+                    .insertNewRecord(record)
+                    .catch((err) => {
                     msg.channel.send(err);
                 });
-                return record;
+                return [record, count_id];
             });
         }
         animateLoading(msg, index) {
-            let states = [
-                "✅❌❌❌❌",
-                "✅✅❌❌❌",
-                "✅✅✅❌❌",
-                "✅✅✅✅❌",
-                "✅✅✅✅✅",
-            ];
+            let states = ["✅❌❌❌", "✅✅❌❌", "✅✅✅❌", "✅✅✅✅"];
             msg.edit(states[index]);
         }
         createSelect() {
@@ -346,6 +338,7 @@ module.exports = {
                 let name = user[i].name;
                 let playtime = user[i].playtime;
                 let days = user[i].days;
+                playtime = playtime.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
                 let award;
                 medals[i] != null ? (award = medals[i]) : (award = "");
                 embed.addFields({

@@ -1,19 +1,34 @@
-import { VoiceState } from "discord.js";
 import { Client } from "discord.js";
 import { Message } from "discord.js";
+import fetch from "node-fetch";
+
+// require("dotenv").config("/.env");
+
 module.exports = {
 	commands: ["yee"],
 	theClass: class Yee {
 		async onInit(msg: Message, client: Client) {
 			let voice = msg.member?.voice;
 
-			if (!voice?.channelID) {
-				msg.reply("You must be in a voice channel to use this command.");
-				return;
-			}
+			msg.react("<:miniYee:439201431678091264>");
 
-			let connection = await voice.channel?.join();
+			let connection = await voice?.channel?.join();
+
 			connection?.play("./src/assets/audio/yee.mp3");
+
+			let baseUrl = `https://g.tenor.com/v1/random?key=${process.env.TENOR_KEY}`;
+
+			fetch(`${baseUrl}&q=yeedinosaur`).then(async (data: any) => {
+				let yee = await data.json();
+				yee = yee.results;
+				console.log(yee);
+
+				let index = Math.floor(Math.random() * yee.length);
+
+				console.log(`${index} and the lenght ${yee.length}`);
+
+				msg.channel.send(yee[index].url);
+			});
 		}
 	},
 };

@@ -19,7 +19,7 @@ export class SteamModel extends DbConnect {
 					console.error(err);
 					reject(err);
 				}
-				resolve((this.lastId = result.insertId));
+				resolve(result.insertId);
 			});
 		});
 	}
@@ -66,7 +66,7 @@ export class SteamModel extends DbConnect {
 				}
 				resolve(result);
 			});
-		})
+		});
 	}
 
 	getDate() {

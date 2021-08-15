@@ -19,7 +19,7 @@ class SteamModel extends DbConnect_1.DbConnect {
                     console.error(err);
                     reject(err);
                 }
-                resolve((this.lastId = result.insertId));
+                resolve(result.insertId);
             });
         });
     }

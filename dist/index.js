@@ -6,12 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const config_json_1 = require("./config.json");
+console.log(path_1.default.join(__dirname, "../.env"));
+require("dotenv").config(path_1.default.join(__dirname, "../.env"));
 const client = new discord_js_1.Client();
 const disbut = require("discord-buttons");
 disbut(client);
 client.once("ready", () => {
     var _a, _b;
+    const onInit = require(path_1.default.join(__dirname, "dev", "startSound.js"));
+    onInit(client);
     //commands
     console.log(((_a = client.user) === null || _a === void 0 ? void 0 : _a.username) + " is ready!");
     (_b = client.user) === null || _b === void 0 ? void 0 : _b.setActivity("https://www.youtube.com/watch?v=dQw4w9WgXcQ", {
@@ -35,8 +38,8 @@ client.once("ready", () => {
     readCommands("commands");
 });
 //events
-process.on('unhandledRejection', error => {
-    console.error('Unhandled promise rejection:', error);
+process.on("unhandledRejection", (error) => {
+    console.error("Unhandled promise rejection:", error);
 });
 client.on("disconnect", () => {
     var _a;
@@ -48,4 +51,5 @@ client.on("typingStart", (channel, user) => {
 // client.on("clickButton", (b: MessageComponent) => {
 // 	console.log(b.id);
 // });
-client.login(config_json_1.discordToken);
+console.log(process.env.DISCORD_KEY);
+client.login(process.env.DISCORD_KEY);

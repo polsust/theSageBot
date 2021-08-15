@@ -1,13 +1,18 @@
 import { Client } from "discord.js";
 import path from "path";
 import fs from "fs";
-import { discordToken } from "./config.json";
+console.log(path.join(__dirname, "../.env"));
+
+require("dotenv").config(path.join(__dirname, "../.env"));
 
 const client = new Client();
 const disbut = require("discord-buttons");
 disbut(client);
 
 client.once("ready", () => {
+	const onInit = require(path.join(__dirname, "dev", "startSound.js"));
+	onInit(client);
+
 	//commands
 	console.log(client.user?.username + " is ready!");
 	client.user?.setActivity("https://www.youtube.com/watch?v=dQw4w9WgXcQ", {
@@ -35,8 +40,8 @@ client.once("ready", () => {
 });
 
 //events
-process.on('unhandledRejection', error => {
-	console.error('Unhandled promise rejection:', error);
+process.on("unhandledRejection", (error) => {
+	console.error("Unhandled promise rejection:", error);
 });
 
 client.on("disconnect", () => {
@@ -51,4 +56,6 @@ client.on("typingStart", (channel: any, user: any) => {
 // 	console.log(b.id);
 // });
 
-client.login(discordToken);
+console.log(process.env.DISCORD_KEY);
+
+client.login(process.env.DISCORD_KEY);

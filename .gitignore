@@ -1,3 +1,4 @@
-config.json
 database/dbConfig.json
-node_modules/
+./node_modules
+.env
+./dist

@@ -1,4 +1,4 @@
-import { MessageReaction, MessageEmbed, Message } from "discord.js";
+import { MessageEmbed, Message } from "discord.js";
 
 import {
 	MessageMenuOption,
@@ -9,8 +9,8 @@ import {
 } from "discord-buttons";
 //Steam
 const SteamAPI = require("steamapi");
-import { steamToken } from "../config.json";
-const steam = new SteamAPI(steamToken);
+
+const steam = new SteamAPI(process.env.STEAM_KEY);
 const steamID = [
 	"76561198298126172", //thePlaya
 	"76561198299951692", //george
@@ -27,15 +27,6 @@ import { SteamModel } from "../database/SteamModel";
 import { SteamUser } from "../steamUser.interface";
 import { Client } from "discord.js";
 
-/* function longestString(strings: any[]) {
-	let length: number[] = [];
-	strings.forEach((element) => {
-		length.push(element.name.length);
-	});
-	let LongestName: number;
-	return (LongestName = Math.max.apply(null, length));
-} */
-
 module.exports = {
 	commands: ["steamRankings", "s", "steamRanking", "sr", "rankings"],
 	theClass: class SteamRankings {
@@ -50,7 +41,7 @@ module.exports = {
 		}
 
 		async onInit(msg: Message, client: Client) {
-			let loadingMsg = await msg.channel.send("❌❌❌❌❌");
+			let loadingMsg = await msg.channel.send("❌❌❌❌");
 			this.animateLoading(loadingMsg, 0);
 
 			this.allRecords = await this.steamRecord.getAllRecords();
@@ -92,14 +83,13 @@ module.exports = {
 				record.date,
 				record.timeSince
 			);
-			this.animateLoading(loadingMsg, 3);
 
 			let row = new MessageActionRow().addComponent(this.createSelect());
 			let row2 = new MessageActionRow().addComponents(
 				...this.createButtons().set1
 			);
 
-			this.animateLoading(loadingMsg, 4);
+			this.animateLoading(loadingMsg, 3);
 			await loadingMsg.delete();
 
 			msg.channel
@@ -149,12 +139,15 @@ module.exports = {
 									"Adding new record..."
 								);
 								replied = true;
-								this.preparedRecords.push(await this.addNewRecord(msg));
-								let count_id = this.totalPages + 1;
+
+								let newRecord = await this.addNewRecord(msg);
+
+								this.preparedRecords.push(newRecord[0]);
 								let newRecordData = {
 									date: this.getDate(),
-									count_id,
+									count_id: newRecord[1],
 								};
+								console.log(newRecordData);
 
 								this.allRecords.push(newRecordData);
 								this.totalPages++;
@@ -174,10 +167,13 @@ module.exports = {
 								break;
 							case "yes":
 								index = this.currentPage - 1;
+								console.log(this.allRecords[index]);
 
-								await this.steamRecord.deleteRecordById(
-									this.allRecords[index].count_id
-								);
+								await this.steamRecord
+									.deleteRecordById(this.allRecords[index].count_id)
+									.catch((err: Error) => {
+										msg.channel.send(err);
+									});
 								this.allRecords.splice(index, 1);
 								this.preparedRecords.splice(index, 1);
 								this.totalPages--;
@@ -248,19 +244,15 @@ module.exports = {
 				(a: { playtime: number }, b: { playtime: number }) =>
 					b.playtime - a.playtime
 			);
-			await this.steamRecord.insertNewRecord(record).catch((err) => {
-				msg.channel.send(err);
-			});
-			return record;
+			const count_id = await this.steamRecord
+				.insertNewRecord(record)
+				.catch((err) => {
+					msg.channel.send(err);
+				});
+			return [record, count_id];
 		}
 		private animateLoading(msg: Message, index: number) {
-			let states = [
-				"✅❌❌❌❌",
-				"✅✅❌❌❌",
-				"✅✅✅❌❌",
-				"✅✅✅✅❌",
-				"✅✅✅✅✅",
-			];
+			let states = ["✅❌❌❌", "✅✅❌❌", "✅✅✅❌", "✅✅✅✅"];
 
 			msg.edit(states[index]);
 		}
@@ -417,8 +409,10 @@ module.exports = {
 			let pos = 1;
 			for (let i = 0; i < user.length; i++) {
 				let name = user[i].name;
-				let playtime = user[i].playtime;
+				let playtime: string | number = user[i].playtime;
 				let days = user[i].days;
+
+				playtime = playtime.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
 				let award;
 				medals[i] != null ? (award = medals[i]) : (award = "");
