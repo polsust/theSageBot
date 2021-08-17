@@ -1,1 +1,1 @@
-worker:node dist/index.js
+clock: node dist/index.js
