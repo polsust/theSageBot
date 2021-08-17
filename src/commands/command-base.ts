@@ -1,7 +1,7 @@
 import  path  from 'path';
 import { Client, Message } from "discord.js";
 
-const prefix = require(path.join(__dirname,"../config.json")).prefix;
+const prefix = require(path.join(__dirname,"../../config.json")).prefix;
 
 export = (client: Client, commandOptions: any) => {
 	let { commands, theClass } = commandOptions;
