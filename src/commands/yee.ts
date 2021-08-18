@@ -14,7 +14,7 @@ module.exports = {
 
 			let connection = await voice?.channel?.join();
 
-			connection?.play("./src/assets/audio/yee.mp3");
+			// connection?.play("./src/assets/audio/yee.mp3");
 
 			let baseUrl = `https://g.tenor.com/v1/random?key=${process.env.TENOR_KEY}`;
 
