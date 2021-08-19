@@ -13,7 +13,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_fetch_1 = __importDefault(require("node-fetch"));
-// require("dotenv").config("/.env");
 module.exports = {
     commands: ["yee"],
     theClass: class Yee {
@@ -30,7 +29,6 @@ module.exports = {
                     yee = yee.results;
                     console.log(yee);
                     let index = Math.floor(Math.random() * yee.length);
-                    console.log(`${index} and the lenght ${yee.length}`);
                     msg.channel.send(yee[index].url);
                 }));
             });

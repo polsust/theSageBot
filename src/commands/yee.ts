@@ -2,8 +2,6 @@ import { Client } from "discord.js";
 import { Message } from "discord.js";
 import fetch from "node-fetch";
 
-// require("dotenv").config("/.env");
-
 module.exports = {
 	commands: ["yee"],
 	theClass: class Yee {
@@ -24,8 +22,6 @@ module.exports = {
 				console.log(yee);
 
 				let index = Math.floor(Math.random() * yee.length);
-
-				console.log(`${index} and the lenght ${yee.length}`);
 
 				msg.channel.send(yee[index].url);
 			});
