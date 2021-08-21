@@ -8,13 +8,17 @@ module.exports = (client, commandOptions) => {
     let { commands, theClass } = commandOptions;
     client.on("message", (msg) => {
         const { member, content } = msg;
+        let segmentedMsg = content.split(" ");
+        const msgContent = segmentedMsg[0];
+        segmentedMsg.splice(0, 1);
+        const msgArgs = segmentedMsg;
         if (commands === undefined || commands === {})
             return;
         if (!content.startsWith(prefix))
             return;
         for (const command of commands) {
-            if (content.toLowerCase() === `${prefix}${command.toLowerCase()}`) {
-                new theClass().onInit(msg, client);
+            if (msgContent.toLowerCase() === `${prefix}${command.toLowerCase()}`) {
+                new theClass().onInit(msg, client, msgArgs);
                 return;
             }
         }

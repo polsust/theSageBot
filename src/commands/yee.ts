@@ -1,5 +1,4 @@
-import { Client } from "discord.js";
-import { Message } from "discord.js";
+import { Client, Message } from "discord.js";
 import fetch from "node-fetch";
 
 module.exports = {
