@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { Client, Message, StreamDispatcher, VoiceConnection } from "discord.js";
+import { Client, Message, VoiceConnection } from "discord.js";
 
 module.exports = {
 	commands: ["tts", "pol"],
@@ -17,7 +17,7 @@ module.exports = {
 
 			let voice = msg.member?.voice;
 			this.connection = await voice?.channel?.join();
-			setTimeout(async() => {
+			setTimeout(async () => {
 				for (const word of words) {
 					await this.readWord(word, msg);
 				}
@@ -42,9 +42,7 @@ module.exports = {
 				} else if (letter === ".") {
 					wait = 700;
 				} else {
-					msg.channel.send(
-						`Error: Character/s "${previousLetter}${letter}${nextLetter}" not interpreted`
-					);
+					msg.channel.send(`Error: Character/s "${letter}" not interpreted`);
 				}
 			}
 

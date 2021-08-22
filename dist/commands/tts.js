@@ -59,7 +59,7 @@ module.exports = {
                         wait = 700;
                     }
                     else {
-                        msg.channel.send(`Error: Character/s "${previousLetter}${letter}${nextLetter}" not interpreted`);
+                        msg.channel.send(`Error: Character/s "${letter}" not interpreted`);
                     }
                 }
                 return new Promise((resolve) => {
