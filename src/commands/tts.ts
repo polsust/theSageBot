@@ -63,7 +63,12 @@ module.exports = {
 			console.log(previousLetter + letter + nextLetter);
 
 			const dispatcher = this.connection?.play(
-				this.path + "/" + previousLetter + letter + nextLetter + ".wav"
+				this.path +
+					"/" +
+					previousLetter.toLowerCase() +
+					letter.toLowerCase() +
+					nextLetter.toLowerCase() +
+					".wav"
 			);
 
 			return new Promise((resolve) => {
