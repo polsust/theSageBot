@@ -46,9 +46,6 @@ module.exports = {
                         yield this.playAudio(letter, nextLetter);
                         i++;
                     }
-                    else if (this.audioExists(previousLetter + letter)) {
-                        yield this.playAudio(letter, previousLetter);
-                    }
                     else if (this.audioExists(letter)) {
                         yield this.playAudio(letter);
                     }
@@ -75,7 +72,12 @@ module.exports = {
         playAudio(letter, nextLetter = "", previousLetter = "") {
             var _a;
             console.log(previousLetter + letter + nextLetter);
-            const dispatcher = (_a = this.connection) === null || _a === void 0 ? void 0 : _a.play(this.path + "/" + previousLetter + letter + nextLetter + ".wav");
+            const dispatcher = (_a = this.connection) === null || _a === void 0 ? void 0 : _a.play(this.path +
+                "/" +
+                previousLetter.toLowerCase() +
+                letter.toLowerCase() +
+                nextLetter.toLowerCase() +
+                ".wav");
             return new Promise((resolve) => {
                 setInterval(() => {
                     if (dispatcher === null || dispatcher === void 0 ? void 0 : dispatcher.writableEnded) {

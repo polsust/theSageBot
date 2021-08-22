@@ -33,9 +33,7 @@ module.exports = {
 				if (this.audioExists(letter + nextLetter)) {
 					await this.playAudio(letter, nextLetter);
 					i++;
-				} else if (this.audioExists(previousLetter + letter)) {
-					await this.playAudio(letter, previousLetter);
-				} else if (this.audioExists(letter)) {
+				}else if (this.audioExists(letter)) {
 					await this.playAudio(letter);
 				} else if (letter === ",") {
 					wait = 500;
