@@ -51,7 +51,7 @@ module.exports = {
 			});
 		}
 		private audioExists(silab: string): boolean {
-			return this.audios.includes(silab.toLowerCase() + ".wav");
+			return this.audios.includes(silab.toLowerCase() + ".mp3");
 		}
 		private playAudio(
 			letter: string,
