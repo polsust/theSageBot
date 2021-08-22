@@ -33,7 +33,7 @@ module.exports = {
 				if (this.audioExists(letter + nextLetter)) {
 					await this.playAudio(letter, nextLetter);
 					i++;
-				}else if (this.audioExists(letter)) {
+				} else if (this.audioExists(letter)) {
 					await this.playAudio(letter);
 				} else if (letter === ",") {
 					wait = 500;
@@ -66,7 +66,7 @@ module.exports = {
 					previousLetter.toLowerCase() +
 					letter.toLowerCase() +
 					nextLetter.toLowerCase() +
-					".wav"
+					".mp3"
 			);
 
 			return new Promise((resolve) => {
