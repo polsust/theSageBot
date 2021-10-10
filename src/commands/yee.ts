@@ -15,7 +15,7 @@ module.exports = {
 
 			let baseUrl = `https://g.tenor.com/v1/random?key=${process.env.TENOR_KEY}`;
 
-			fetch(`${baseUrl}&q=yeedinosaurmeme&limit=9`).then(async (data: any) => {
+			fetch(`${baseUrl}&q=yeememe`).then(async (data: any) => {
 				let yee = await data.json();
 				yee = yee.results;
 				console.log(yee);
