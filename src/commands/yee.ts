@@ -13,7 +13,7 @@ module.exports = {
 
 			connection?.play("./src/assets/audio/yee.mp3");
 
-			let baseUrl = `https://g.tenor.com/v1/random?key=${process.env.TENOR_KEY}`;
+			let baseUrl = `https://g.tenor.com/v1/search?key=${process.env.TENOR_KEY}`;
 
 			fetch(`${baseUrl}&q=yeedinosaurmeme&limit=9`).then(async (data: any) => {
 				let yee = await data.json();
