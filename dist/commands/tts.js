@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const promises_1 = __importDefault(require("fs/promises"));
 module.exports = {
-    commands: ["tts", "pol"],
+    commands: ["pol", "guillem"],
     theClass: class Tts {
         constructor() {
             this.audios = [];
@@ -23,7 +23,8 @@ module.exports = {
             var _a, _b;
             return __awaiter(this, void 0, void 0, function* () {
                 let path = "./src/assets/audio/tts/";
-                let person = "pol";
+                // get just the person from the message
+                let person = msg.content.substring(1, msg.content.indexOf(" "));
                 this.path = path + person;
                 this.audios = yield promises_1.default.readdir(`./src/assets/audio/tts/${person}`);
                 let voice = (_a = msg.member) === null || _a === void 0 ? void 0 : _a.voice;
@@ -67,7 +68,7 @@ module.exports = {
             });
         }
         audioExists(silab) {
-            return this.audios.includes(silab.toLowerCase() + ".wav");
+            return this.audios.includes(silab.toLowerCase() + ".mp3");
         }
         playAudio(letter, nextLetter = "", previousLetter = "") {
             var _a;
@@ -77,7 +78,7 @@ module.exports = {
                 previousLetter.toLowerCase() +
                 letter.toLowerCase() +
                 nextLetter.toLowerCase() +
-                ".wav");
+                ".mp3");
             return new Promise((resolve) => {
                 setInterval(() => {
                     if (dispatcher === null || dispatcher === void 0 ? void 0 : dispatcher.writableEnded) {

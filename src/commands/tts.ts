@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { Client, Message, VoiceConnection } from "discord.js";
 
 module.exports = {
-	commands: ["tts", "pol"],
+	commands: ["pol"],
 	theClass: class Tts {
 		audios: string[] = [];
 		connection: VoiceConnection | undefined;
@@ -10,7 +10,10 @@ module.exports = {
 
 		async onInit(msg: Message, client: Client, words: string[]) {
 			let path = "./src/assets/audio/tts/";
-			let person = "pol";
+
+			// get just the person from the message
+			let person = msg.content.substring(1, msg.content.indexOf(" "));
+
 			this.path = path + person;
 
 			this.audios = await fs.readdir(`./src/assets/audio/tts/${person}`);
